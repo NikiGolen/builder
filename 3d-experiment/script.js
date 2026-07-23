@@ -91,7 +91,7 @@ function init3DSpace() {
   container.innerHTML = ''; 
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1e293b);
+  scene.background = new THREE.Color(0xdfb119); // Pocket Nurse brand gold background
 
   camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
   camera.position.set(0, 12, 14); 
@@ -174,7 +174,6 @@ function setupInteractionEvents(container) {
 }
 
 // 6. Sizing & Wall Synchronization Modifiers
-// 6. Sizing & Wall Synchronization Modifiers
 function updateRoomWalls() {
   roomWalls.forEach(wall => scene.remove(wall));
   roomWalls = [];
@@ -199,7 +198,7 @@ function updateRoomWalls() {
   scene.add(backWall);
   roomWalls.push(backWall);
 
-  // Front Wall (+Z) - Lower profile or left open if you want easier front entry
+  // Front Wall (+Z)
   const frontWall = new THREE.Mesh(backGeo, wallMat);
   frontWall.position.set(0, wallHeight / 2, halfZ + (wallThickness / 2));
   scene.add(frontWall);
