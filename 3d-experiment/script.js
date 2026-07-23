@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+
 // 1. Preset Sizing & Catalog Data Sets
 const sizePresets = {
   small: { width: 560, height: 440, readout: "14ft x 11ft", area: "154 sq ft" },
@@ -50,6 +51,10 @@ const sizeSelect = document.getElementById('room-size-select');
 const footprintDims = document.getElementById('footprint-dims');
 const footprintArea = document.getElementById('footprint-area');
 
+// Card buttons inside our welcome screen dashboard card
+const chooseMedsurgBtn = document.getElementById('choose-medsurg');
+const choosePharmacyBtn = document.getElementById('choose-pharmacy');
+
 let scene, camera, renderer, floor;
 const spawnedObjects = [];
 let activeType = 'medsurg';
@@ -57,9 +62,13 @@ let activeType = 'medsurg';
 // 3. Application Lifecycle Handlers
 function initializeWorkspace(type) {
   activeType = type;
-  document.getElementById('welcome-screen').classList.add('hidden');
+  welcomeScreen.classList.add('hidden');
   init3DSpace();
 }
+
+// Fixed event listeners bound securely to our script module environment nodes
+if(chooseMedsurgBtn) chooseMedsurgBtn.addEventListener('click', () => initializeWorkspace('medsurg'));
+if(choosePharmacyBtn) choosePharmacyBtn.addEventListener('click', () => initializeWorkspace('pharmacy'));
 
 // 4. Core Three.js Space Initialization Engine
 function init3DSpace() {
