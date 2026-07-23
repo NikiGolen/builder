@@ -63,12 +63,20 @@ const routingPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // Flat inv
 // 3. Application Lifecycle Setup
 function initializeWorkspace(type) {
   activeType = type;
+  
   if (welcomeScreen) {
+    // Adds the utility utility styling class to smoothly fade out the card mask
     welcomeScreen.classList.add('hidden');
-    welcomeScreen.style.display = 'none'; // Force hide template overlay card
+    
+    // Explicitly overrides layout structures to remove interaction blocking bugs
+    welcomeScreen.style.opacity = '0';
+    welcomeScreen.style.visibility = 'hidden';
+    welcomeScreen.style.pointerEvents = 'none';
   }
+  
   init3DSpace();
 }
+
 
 // Fixed Fail-Safe Click Bridge
 document.addEventListener('DOMContentLoaded', () => {
