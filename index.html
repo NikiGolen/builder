@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Lab Builder Sandbox</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --dark: #0f172a;
+      --light: #f8fafc;
+      --border: #cbd5e1;
+      --grid-size: 40px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { display: flex; height: 100vh; background: var(--light); color: var(--dark); overflow: hidden; }
+
+    /* Left Sidebar: Components Menu */
+    .sidebar { width: 320px; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
+    .sidebar-header { padding: 1.5rem; border-bottom: 1px solid var(--border); }
+    .sidebar-header h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .sidebar-header p { font-size: 0.85rem; color: #64748b; }
+    .component-list { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; flex-grow: 1; }
+    
+    /* Draggable Item Styles */
+    .draggable-item { padding: 1rem; background: var(--light); border: 2px dashed var(--border); border-radius: 0.5rem; cursor: grab; display: flex; align-items: center; gap: 1rem; transition: all 0.2s; user-select: none; }
+    .draggable-item:hover { border-color: var(--primary); background: #eff6ff; }
+    .item-icon { width: 40px; height: 40px; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+
+    /* Right Side: Visual Canvas Workspace */
+    .canvas-container { flex-grow: 1; position: relative; overflow: auto; padding: 2rem; display: flex; align-items: center; justify-content: center; background: #e2e8f0; }
+    .canvas { width: 800px; height: 600px; background: white; border-radius: 0.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); position: relative; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: var(--grid-size) var(--grid-size); }
+
+    /* Placed Item Styles on Canvas */
+    .placed-item { position: absolute; width: calc(var(--grid-size) * 2); height: calc(var(--grid-size) * 2); background: rgba(37, 99, 235, 0.15); border: 2px solid var(--primary); border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; font-size: 2rem; cursor: move; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); user-select: none; }
+    .placed-item:active { cursor: grabbing; }
+    .delete-btn { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: #ef4444; color: white; border: none; border-radius: 50%; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Component Menu -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>Simulation Equipment</h2>
+      <p>Drag items onto the blueprint canvas</p>
+    </div>
+    <div class="component-list">
+      <div class="draggable-item" draggable="true" data-type="manikin" data-icon="🧍">
+        <div class="item-icon" style="background: #dbeafe;">🧍</div>
+        <div>
+          <strong>Patient Manikin</strong>
+          <p style="font-size: 0.75rem; color: #64748b;">High-Fidelity Trainer</p>
+        </div>
+      </div>
+      <div class="draggable-item" draggable="true" data-type="bed" data-icon="🛏️">
+        <div class="item-icon" style="background: #fef08a;">🛏️</div>
+        <div>
+          <strong>Hospital Bed</strong>
+          <p style="font-size: 0.75rem; color: #64748b;">Adjustable Side Rails</p>
+        </div>
+      </div>
+      <div class="draggable-item" draggable="true" data-type="monitor" data-icon="🖥️">
+        <div class="item-icon" style="background: #bbf7d0;">🖥️</div>
+        <div>
+          <strong>Vital Signs Monitor</strong>
+          <p style="font-size: 0.75rem; color: #64748b;">Wall-mount screen</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canvas Workspace -->
+  <div class="canvas-container">
+    <div class="canvas" id="blueprint-canvas"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('blueprint-canvas');
+    const draggableItems = document.querySelectorAll('.draggable-item');
+    const GRID_SIZE = 40;
+    let draggedType = '';
+    let draggedIcon = '';
+
+    // Handle dragging from sidebar
+    draggableItems.forEach(item => {
+      item.addEventListener('dragstart', (e) => {
+        draggedType = item.getAttribute('data-type');
+        draggedIcon = item.getAttribute('data-icon');
+      });
+    });
+
+    canvas.addEventListener('dragover', (e) => {
+      e.preventDefault(); // Required to allow dropping
+    });
+
+    canvas.addEventListener('drop', (e) => {
+      e.preventDefault();
+      
+      // Calculate drop position relative to the canvas
+      const rect = canvas.getBoundingClientRect();
+      let x = e.clientX - rect.left;
+      let y = e.clientY - rect.top;
+
+      // Snap coordinates to the visual grid lines
+      x = Math.floor(x / GRID_SIZE) * GRID_SIZE;
+      y = Math.floor(y / GRID_SIZE) * GRID_SIZE;
+
+      // Keep items inside boundary limits
+      if (x < 0) x = 0;
+      if (y < 0) y = 0;
+      if (x > rect.width - (GRID_SIZE * 2)) x = rect.width - (GRID_SIZE * 2);
+      if (y > rect.height - (GRID_SIZE * 2)) y = rect.height - (GRID_SIZE * 2);
+
+      createNewCanvasItem(x, y, draggedIcon);
+    });
+
+    function createNewCanvasItem(x, y, icon) {
+      const item = document.createElement('div');
+      item.className = 'placed-item';
+      item.style.left = `${x}px`;
+      item.style.top = `${y}px`;
+      item.textContent = icon;
+
+      // Create a built-in delete button for easy removal
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = '×';
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Stop event from triggering canvas mechanics
+        item.remove();
+      });
+
+      item.appendChild(deleteBtn);
+      makeCanvasItemDraggable(item);
+      canvas.appendChild(item);
+    }
+
+    // Allow dragging items already placed on the canvas
+    function makeCanvasItemDraggable(item) {
+      let isDragging = false;
+      let startX, startY;
+
+      item.addEventListener('mousedown', (e) => {
+        if (e.target.className === 'delete-btn') return;
+        isDragging = true;
+        startX = e.clientX - item.offsetLeft;
+        startY = e.clientY - item.offsetTop;
+        item.style.zIndex = 1000; // Bring to front while moving
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        const rect = canvas.getBoundingClientRect();
+        let newX = e.clientX - startX;
+        let newY = e.clientY - startY;
+
+        // Snap to grid dynamically while moving
+        newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
+        newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+
+        // Boundary constraints
+        if (newX < 0) newX = 0;
+        if (newY < 0) newY = 0;
+        if (newX > rect.width - item.offsetWidth) newX = rect.width - item.offsetWidth;
+        if (newY > rect.height - item.offsetHeight) newY = rect.height - item.offsetHeight;
+
+        item.style.left = `${newX}px`;
+        item.style.top = `${newY}px`;
+      });
+
+      document.addEventListener('mouseup', () => {
+        if (isDragging) {
+          isDragging = false;
+          item.style.zIndex = ''; // Reset stack order
+        }
+      });
+    }
+  </script>
+</body>
+</html>
