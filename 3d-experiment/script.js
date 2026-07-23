@@ -174,6 +174,7 @@ function setupInteractionEvents(container) {
 }
 
 // 6. Sizing & Wall Synchronization Modifiers
+// 6. Sizing & Wall Synchronization Modifiers
 function updateRoomWalls() {
   roomWalls.forEach(wall => scene.remove(wall));
   roomWalls = [];
@@ -181,28 +182,41 @@ function updateRoomWalls() {
   const sizeConfig = sizePresets[sizeSelect.value];
   const halfX = sizeConfig.floorScale.x / 2;
   const halfZ = sizeConfig.floorScale.z / 2;
-  const wallHeight = 2.5;
+  const wallHeight = 1.2; // Lower "Sims-style" half-height walls for easy viewing
   const wallThickness = 0.2;
 
+  // Solid, clean architectural drywall look
   const wallMat = new THREE.MeshStandardMaterial({ 
-    color: 0xe2e8f0, 
-    roughness: 0.8,
+    color: 0xf1f5f9, 
+    roughness: 0.9,
     side: THREE.DoubleSide 
   });
 
-  // Back Wall
+  // Back Wall (-Z)
   const backGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, wallHeight, wallThickness);
   const backWall = new THREE.Mesh(backGeo, wallMat);
   backWall.position.set(0, wallHeight / 2, -halfZ - (wallThickness / 2));
   scene.add(backWall);
   roomWalls.push(backWall);
 
-  // Left Wall
-  const leftGeo = new THREE.BoxGeometry(wallThickness, wallHeight, sizeConfig.floorScale.z);
-  const leftWall = new THREE.Mesh(leftGeo, wallMat);
+  // Front Wall (+Z) - Lower profile or left open if you want easier front entry
+  const frontWall = new THREE.Mesh(backGeo, wallMat);
+  frontWall.position.set(0, wallHeight / 2, halfZ + (wallThickness / 2));
+  scene.add(frontWall);
+  roomWalls.push(frontWall);
+
+  // Left Wall (-X)
+  const sideGeo = new THREE.BoxGeometry(wallThickness, wallHeight, sizeConfig.floorScale.z);
+  const leftWall = new THREE.Mesh(sideGeo, wallMat);
   leftWall.position.set(-halfX - (wallThickness / 2), wallHeight / 2, 0);
   scene.add(leftWall);
   roomWalls.push(leftWall);
+
+  // Right Wall (+X)
+  const rightWall = new THREE.Mesh(sideGeo, wallMat);
+  rightWall.position.set(halfX + (wallThickness / 2), wallHeight / 2, 0);
+  scene.add(rightWall);
+  roomWalls.push(rightWall);
 }
 
 function updateRoomDimensions() {
