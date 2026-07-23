@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pocket Nurse® 3D SimLab Sandbox</title>
   
-  <!-- Fixed CSS layout connection path -->
-  <link rel="stylesheet" href="/builder/style.css">
+  <!-- Points directly to our dedicated local stylesheet file -->
+  <link rel="stylesheet" href="style.css">
 
-  <!-- Secure asynchronous module loading mapping to completely prevent script blocking -->
+  <!-- Secure asynchronous module loading mapping to prevent script blocking -->
   <script type="importmap">
     {
       "imports": {
@@ -30,7 +30,7 @@
   <header class="pn-storefront-header">
     <div class="pn-header-content-area">
       <div class="pn-centered-logo-wrapper">
-        <img src="/builder/photo.jpg" alt="Pocket Nurse® Logo" class="pn-brand-logo-img">
+        <img src="../photo.jpg" alt="Pocket Nurse® Logo" class="pn-brand-logo-img">
       </div>
     </div>
   </header>
@@ -56,17 +56,18 @@
   <!-- Main 1200px Content Window Grid Wrapper -->
   <div class="pn-main-grid-viewport">
 
+    <!-- Reconfigured Welcome Screen dashboard selection nodes -->
     <div class="dashboard-overlay" id="welcome-screen">
       <div class="welcome-card">
         <h1>What 3D simulation Lab would you like to build?</h1>
         <p>Select a room template category to load dynamic 3D dimensional blocks.</p>
         <div class="options-grid">
-          <button class="choice-btn" onclick="initializeWorkspace('medsurg')">
+          <button class="choice-btn" id="choose-medsurg">
             <span class="choice-icon">🛏️</span>
             <strong>Med-Surg Hospital Room</strong>
             <span>3D Block Sandbox Model</span>
           </button>
-          <button class="choice-btn" onclick="initializeWorkspace('pharmacy')">
+          <button class="choice-btn" id="choose-pharmacy">
             <span class="choice-icon">🧪</span>
             <strong>Pharmacy Lab</strong>
             <span>3D Block Sandbox Model</span>
@@ -112,7 +113,7 @@
 
   </div>
 
-  <!-- Triggers our local 3D engine scripts inside the subfolder using an explicit Module format -->
+  <!-- Triggers our local 3D engine scripts inside the subfolder using a Module format -->
   <script type="module" src="script.js"></script>
 </body>
 </html>
