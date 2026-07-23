@@ -5,11 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pocket Nurse® 3D SimLab Sandbox</title>
   
-  <!-- We pull in our main brand style sheet from the folder above -->
-  <link rel="stylesheet" href="../style.css">
-  
-  <!-- We load the 3D rendering library engine from a safe public server -->
-  <script src="https://cloudflare.com"></script>
+  <!-- Fixed CSS layout connection path -->
+  <link rel="stylesheet" href="/builder/style.css">
+
+  <!-- Secure asynchronous module loading mapping to completely prevent script blocking -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com"
+      }
+    }
+  </script>
 </head>
 <body>
 
@@ -24,8 +30,7 @@
   <header class="pn-storefront-header">
     <div class="pn-header-content-area">
       <div class="pn-centered-logo-wrapper">
-        <!-- Pulls our brand photo.jpg asset safely from the directory above -->
-        <img src="../photo.jpg" alt="Pocket Nurse® Logo" class="pn-brand-logo-img">
+        <img src="/builder/photo.jpg" alt="Pocket Nurse® Logo" class="pn-brand-logo-img">
       </div>
     </div>
   </header>
@@ -101,14 +106,13 @@
         </div>
       </div>
       <div class="canvas-container">
-        <!-- Three.js will inject our 3D canvas viewport directly into this div container box -->
         <div class="canvas" id="blueprint-canvas"></div>
       </div>
     </div>
 
   </div>
 
-  <!-- Triggers our local 3D engine scripts inside the subfolder -->
-  <script src="script.js"></script>
+  <!-- Triggers our local 3D engine scripts inside the subfolder using an explicit Module format -->
+  <script type="module" src="script.js"></script>
 </body>
 </html>
