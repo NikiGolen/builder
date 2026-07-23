@@ -307,20 +307,60 @@ function load3DMenuCatalog() {
 function spawn3DObject(itemData) {
   if (!scene) return;
   
-  const geometry = new THREE.BoxGeometry(itemData.dims[0], itemData.dims[1], itemData.dims[2]);
-  const material = new THREE.MeshStandardMaterial({ 
-    color: itemData.color, 
-    roughness: 0.5,
-    metalness: 0.1
-  });
-  const block = new THREE.Mesh(geometry, material);
+  const group = new THREE.Group();
 
-  block.position.x = (Math.random() - 0.5) * 2;
-  block.position.y = itemData.dims[1] / 2;
-  block.position.z = (Math.random() - 0.5) * 2;
+  if (itemData.label === "Patient Bed") {
+    // 1. Frame Base / Understructure (Off-white clinical metal)
+    const baseGeo = new THREE.BoxGeometry(1.2, 0.2, 2.0);
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 });
+    const baseMesh = new THREE.Mesh(baseGeo, frameMat);
+    baseMesh.position.y = 0.2;
+    group.add(baseMesh);
 
-  scene.add(block);
-  spawnedObjects.push(block);
+    // 2. Lower Mattress Section (Plush dark purple/plum hospital mattress)
+    const mattressGeo = new THREE.BoxGeometry(1.3, 0.35, 2.1);
+    const mattressMat = new THREE.MeshStandardMaterial({ color: 0x581c87, roughness: 0.7 });
+    const mattressMesh = new THREE.Mesh(mattressGeo, mattressMat);
+    mattressMesh.position.y = 0.475;
+    group.add(mattressMesh);
+
+    // 3. Articulated Head Section (Tilted up)
+    const headGeo = new THREE.BoxGeometry(1.3, 0.35, 0.8);
+    const headMesh = new THREE.Mesh(headGeo, mattressMat);
+    headMesh.position.set(0, 0.65, -0.7);
+    headMesh.rotation.x = Math.PI / 6;
+    group.add(headMesh);
+
+    // 4. Headboard & Footboard (White panels)
+    const boardGeo = new THREE.BoxGeometry(1.35, 0.6, 0.1);
+    const boardMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
+    
+    const headBoard = new THREE.Mesh(boardGeo, boardMat);
+    headBoard.position.set(0, 0.6, -1.05);
+    group.add(headBoard);
+
+    const footBoard = new THREE.Mesh(boardGeo, boardMat);
+    footBoard.position.set(0, 0.6, 1.05);
+    group.add(footBoard);
+
+  } else {
+    const geometry = new THREE.BoxGeometry(itemData.dims[0], itemData.dims[1], itemData.dims[2]);
+    const material = new THREE.MeshStandardMaterial({ 
+      color: itemData.color, 
+      roughness: 0.5,
+      metalness: 0.1
+    });
+    const block = new THREE.Mesh(geometry, material);
+    block.position.y = itemData.dims[1] / 2;
+    group.add(block);
+  }
+
+  group.position.x = (Math.random() - 0.5) * 2;
+  group.position.y = 0;
+  group.position.z = (Math.random() - 0.5) * 2;
+
+  scene.add(group);
+  spawnedObjects.push(group);
 }
 
 // 9. Core Command Clear/Reset Triggers
