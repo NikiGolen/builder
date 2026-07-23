@@ -162,12 +162,12 @@
     </div>
 
   </div>
-<script>
+  <script>
     // Configuration blueprints mapping pixels to realistic feet scaling
     const sizePresets = {
-      small: { width: 560, height: 440, readout: "14ft x 11ft", area: "154 sq ft" },
-      medium: { width: 720, height: 520, readout: "18ft x 13ft", area: "234 sq ft" },
-      large: { width: 880, height: 600, readout: "22ft x 15ft", area: "330 sq ft" }
+      small: { width: 480, height: 360, readout: "12ft x 9ft", area: "108 sq ft" },
+      medium: { width: 720, height: 440, readout: "18ft x 11ft", area: "198 sq ft" },
+      large: { width: 840, height: 560, readout: "21ft x 14ft", area: "294 sq ft" }
     };
 
     const catalogs = {
@@ -277,21 +277,23 @@
     canvas.addEventListener('drop', (e) => {
       e.preventDefault();
       const rect = canvas.getBoundingClientRect();
+      
+      // Fixed calculations measuring offsets safely inside the target canvas room box
       let x = e.clientX - rect.left;
       let y = e.clientY - rect.top;
 
       x = Math.floor(x / GRID_SIZE) * GRID_SIZE;
       y = Math.floor(y / GRID_SIZE) * GRID_SIZE;
 
+      // Restrict spawning outside borders
       if (x < 0) x = 0;
       if (y < 0) y = 0;
-      if (x > rect.width - (GRID_SIZE * 2)) x = rect.width - (GRID_SIZE * 2);
-      if (y > rect.height - (GRID_SIZE * 2)) y = rect.height - (GRID_SIZE * 2);
+      if (x > rect.width - (GRID_SIZE * 2)) x = Math.floor((rect.width - (GRID_SIZE * 2)) / GRID_SIZE) * GRID_SIZE;
+      if (y > rect.height - (GRID_SIZE * 2)) y = Math.floor((rect.height - (GRID_SIZE * 2)) / GRID_SIZE) * GRID_SIZE;
 
       spawnBlueprintAsset(x, y, currentIcon, currentLabel);
     });
-
-    function spawnBlueprintAsset(x, y, icon, label) {
+      function spawnBlueprintAsset(x, y, icon, label) {
       const assetWrapper = document.createElement('div');
       assetWrapper.className = 'placed-item';
       assetWrapper.style.left = `${x}px`;
@@ -319,6 +321,9 @@
       item.addEventListener('mousedown', (e) => {
         if (e.target.className === 'delete-btn') return;
         activeMove = true;
+        
+        // Measure coordinates relative to the canvas box boundary
+        const rect = canvas.getBoundingClientRect();
         startX = e.clientX - item.offsetLeft;
         startY = e.clientY - item.offsetTop;
         item.style.zIndex = 1000;
@@ -327,16 +332,23 @@
       document.addEventListener('mousemove', (e) => {
         if (!activeMove) return;
         const rect = canvas.getBoundingClientRect();
+        
+        // Calculate new position securely restricted inside the room walls
         let newX = e.clientX - startX;
         let newY = e.clientY - startY;
 
         newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
         newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
 
+        // Hard boundary locking prevents dragging items past the room walls
         if (newX < 0) newX = 0;
         if (newY < 0) newY = 0;
-        if (newX > rect.width - item.offsetWidth) newX = rect.width - item.offsetWidth;
-        if (newY > rect.height - item.offsetHeight) newY = rect.height - item.offsetHeight;
+        if (newX > rect.width - item.offsetWidth) {
+          newX = Math.floor((rect.width - item.offsetWidth) / GRID_SIZE) * GRID_SIZE;
+        }
+        if (newY > rect.height - item.offsetHeight) {
+          newY = Math.floor((rect.height - item.offsetHeight) / GRID_SIZE) * GRID_SIZE;
+        }
 
         item.style.left = `${newX}px`;
         item.style.top = `${newY}px`;
@@ -358,6 +370,5 @@
       welcomeScreen.classList.remove('hidden');
     });
   </script>
-
 </body>
 </html>
