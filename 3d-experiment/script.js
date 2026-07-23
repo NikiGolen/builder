@@ -238,7 +238,46 @@ function spawn3DObject(itemData) {
   });
   const block = new THREE.Mesh(geometry, material);
 
-  // Position precisely flush on the upper line surface of your grid mesh layer boundary
+    // Position precisely flush on the upper line surface of your grid mesh layer boundary
+  block.position.x = (Math.random() - 0.5) * 2;
+  block.position.y = itemData.dims[1] / 2; // Set height center flush with ground
+  block.position.z = (Math.random() - 0.5) * 2;
+
+  scene.add(block);
+  spawnedObjects.push(block);
+}
+
+// 9. Core Command Clear/Reset Triggers
+if (clearBtn) {
+  clearBtn.addEventListener('click', () => {
+    if (scene) {
+      spawnedObjects.forEach(obj => scene.remove(obj));
+      spawnedObjects.length = 0;
+    }
+  });
+}
+
+if (changeRoomBtn) {
+  changeRoomBtn.addEventListener('click', () => {
+    if (welcomeScreen) {
+      welcomeScreen.style.display = 'flex';
+      welcomeScreen.classList.remove('hidden');
+    }
+  });
+}
+
+if (sizeSelect) {
+  sizeSelect.addEventListener('change', updateRoomDimensions);
+}
+
+// Handle browser window aspect ratio modifications smoothly
+window.addEventListener('resize', () => {
+  const container = document.getElementById('blueprint-canvas');
+  if (!container || !camera || !renderer) return;
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+});
 
     
   
