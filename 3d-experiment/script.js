@@ -17,7 +17,7 @@ const catalogs = {
     items: [
       { label: "Patient Bed", icon: "🛏️", sub: "Multi-position electric model", bg: "#e0f2fe", dims: [1.4, 1.0, 2.2], color: 0x0284c7 },
       { label: "Adult Manikin", icon: "🧍", sub: "High-Fidelity Patient Simulator", bg: "#f1f5f9", dims: [0.6, 0.4, 1.8], color: 0x64748b },
-      { label: "IV Pump", icon: "⚗️", sub: "Dual-line medication pole", bg: "#dcfce7", dims: [0.5, 2.0, 0.5], color: 0x22c55e },
+      { label: "IV Pump", icon: "⚗️", sub: "Dual-line medication pole", bg: "#dcfce7", dims: [0.8, 2.0, 0.8], color: 0x22c55e },
       { label: "Overbed Table", icon: "🪵", sub: "Height-adjustable tray", bg: "#fef3c7", dims: [1.0, 0.9, 0.5], color: 0xd97706 },
       { label: "Bio-Waste", icon: "🟥", sub: "Regulated wall sharp box", bg: "#fee2e2", dims: [0.4, 0.5, 0.3], color: 0xdc2626 }
     ]
@@ -32,7 +32,7 @@ const catalogs = {
       { label: "Medication Cart", icon: "🛒", sub: "Locking rolling unit dose cart", bg: "#f1f5f9", dims: [1.0, 1.1, 0.7], color: 0x475569 },
       { label: "Supply Shelving", icon: "🗄️", sub: "Heavy-duty bulk storage rack", bg: "#f5f5f4", dims: [2.0, 2.2, 0.6], color: 0x78716c },
       { label: "POS Register", icon: "💻", sub: "Outpatient retail checkout terminal", bg: "#e0f2fe", dims: [0.8, 1.0, 0.8], color: 0x2563eb },
-      { label: "Pill Counter", icon: "🔢", sub: "Digital automatic counting tray", bg: "#fef9c3", dims: [0.5, 0.3, 0.5], color: 0xca8a04 }
+      { label: "Pill Counter", icon: "🔢", sub: "Digital automatic counting tray", bg: "#fef9c3", dims: [0.8, 0.3, 0.8], color: 0xca8a04 }
     ]
   }
 };
@@ -51,6 +51,7 @@ const footprintArea = document.getElementById('footprint-area');
 
 let scene, camera, renderer, floor, gridHelper, controls;
 const spawnedObjects = [];
+let roomWalls = [];
 let activeType = 'medsurg';
 
 // Interaction State Properties
@@ -65,10 +66,7 @@ function initializeWorkspace(type) {
   activeType = type;
   
   if (welcomeScreen) {
-    // Adds the utility utility styling class to smoothly fade out the card mask
     welcomeScreen.classList.add('hidden');
-    
-    // Explicitly overrides layout structures to remove interaction blocking bugs
     welcomeScreen.style.opacity = '0';
     welcomeScreen.style.visibility = 'hidden';
     welcomeScreen.style.pointerEvents = 'none';
@@ -76,7 +74,6 @@ function initializeWorkspace(type) {
   
   init3DSpace();
 }
-
 
 // Fixed Fail-Safe Click Bridge
 document.addEventListener('DOMContentLoaded', () => {
@@ -94,7 +91,7 @@ function init3DSpace() {
   container.innerHTML = ''; 
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1e293b); // Darker clinical slate background
+  scene.background = new THREE.Color(0x1e293b);
 
   camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
   camera.position.set(0, 12, 14); 
@@ -103,11 +100,10 @@ function init3DSpace() {
   renderer.setSize(container.clientWidth, container.clientHeight);
   container.appendChild(renderer.domElement);
 
-  // Initialize OrbitControls for user-driven orbital viewing navigation
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
-  controls.maxPolarAngle = Math.PI / 2 - 0.05; // Prevent camera flipping below ground
+  controls.maxPolarAngle = Math.PI / 2 - 0.05;
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
   scene.add(ambientLight);
@@ -116,19 +112,16 @@ function init3DSpace() {
   directionalLight.position.set(15, 25, 10);
   scene.add(directionalLight);
 
-  // Generate the dynamic physical foundation mesh
   const floorGeo = new THREE.BoxGeometry(1, 0.2, 1); 
   const floorMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
   floor = new THREE.Mesh(floorGeo, floorMat);
   floor.position.set(0, -0.1, 0);
   scene.add(floor);
 
-  // Attach structural visual layout grid
   gridHelper = new THREE.GridHelper(1, 1, 0x475569, 0xcbd5e1);
   gridHelper.position.y = 0.01;
   scene.add(gridHelper);
 
-  // Synchronize size settings and map drag events
   updateRoomDimensions();
   setupInteractionEvents(container);
 
@@ -148,10 +141,11 @@ function setupInteractionEvents(container) {
 
     if (hits.length > 0) {
       selectedMesh = hits[0].object;
-      controls.enabled = false; // Turn off orbital viewing while manipulation is active
+      controls.enabled = false;
     }
   });
-container.addEventListener('pointermove', (e) => {
+
+  container.addEventListener('pointermove', (e) => {
     if (!selectedMesh) return;
 
     const bounds = container.getBoundingClientRect();
@@ -161,12 +155,10 @@ container.addEventListener('pointermove', (e) => {
     raycaster.setFromCamera(mouseVector, camera);
     
     if (raycaster.ray.intersectPlane(routingPlane, planeIntersectionPoint)) {
-      // Get current room size configuration limits to keep objects inside
       const sizeConfig = sizePresets[sizeSelect.value];
       const maxX = (sizeConfig.floorScale.x / 2) - 0.5;
       const maxZ = (sizeConfig.floorScale.z / 2) - 0.5;
 
-      // Clamp coordinates to stay strictly inside the room boundaries
       const clampedX = Math.max(-maxX, Math.min(maxX, planeIntersectionPoint.x));
       const clampedZ = Math.max(-maxZ, Math.min(maxZ, planeIntersectionPoint.z));
 
@@ -177,20 +169,49 @@ container.addEventListener('pointermove', (e) => {
  
   window.addEventListener('pointerup', () => {
     selectedMesh = null;
-    if (controls) controls.enabled = true; // Restore camera tracking mechanics safely
+    if (controls) controls.enabled = true;
   });
 }
 
-// 6. Sizing Synchronization Modifiers
+// 6. Sizing & Wall Synchronization Modifiers
+function updateRoomWalls() {
+  roomWalls.forEach(wall => scene.remove(wall));
+  roomWalls = [];
+
+  const sizeConfig = sizePresets[sizeSelect.value];
+  const halfX = sizeConfig.floorScale.x / 2;
+  const halfZ = sizeConfig.floorScale.z / 2;
+  const wallHeight = 2.5;
+  const wallThickness = 0.2;
+
+  const wallMat = new THREE.MeshStandardMaterial({ 
+    color: 0xe2e8f0, 
+    roughness: 0.8,
+    side: THREE.DoubleSide 
+  });
+
+  // Back Wall
+  const backGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, wallHeight, wallThickness);
+  const backWall = new THREE.Mesh(backGeo, wallMat);
+  backWall.position.set(0, wallHeight / 2, -halfZ - (wallThickness / 2));
+  scene.add(backWall);
+  roomWalls.push(backWall);
+
+  // Left Wall
+  const leftGeo = new THREE.BoxGeometry(wallThickness, wallHeight, sizeConfig.floorScale.z);
+  const leftWall = new THREE.Mesh(leftGeo, wallMat);
+  leftWall.position.set(-halfX - (wallThickness / 2), wallHeight / 2, 0);
+  scene.add(leftWall);
+  roomWalls.push(leftWall);
+}
+
 function updateRoomDimensions() {
   if (!floor || !gridHelper) return;
   const sizeConfig = sizePresets[sizeSelect.value];
   
-  // Update tracking badges
   if (footprintDims) footprintDims.textContent = sizeConfig.readout;
   if (footprintArea) footprintArea.textContent = sizeConfig.area;
 
-  // Real-time scaling alterations of room structure boundaries
   floor.scale.set(sizeConfig.floorScale.x, 1, sizeConfig.floorScale.z);
   
   scene.remove(gridHelper);
@@ -201,12 +222,14 @@ function updateRoomDimensions() {
   );
   gridHelper.position.y = 0.01;
   scene.add(gridHelper);
+
+  updateRoomWalls();
 }
 
 // 7. Continuous Loop Animation Frame Render Cycles
 function animate() {
   requestAnimationFrame(animate);
-  if (controls) controls.update(); // Keeps structural viewport rotation movements smooth
+  if (controls) controls.update();
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }
@@ -244,7 +267,6 @@ function load3DMenuCatalog() {
 function spawn3DObject(itemData) {
   if (!scene) return;
   
-  // Creates an architectural block bounding item matching individual item specifications
   const geometry = new THREE.BoxGeometry(itemData.dims[0], itemData.dims[1], itemData.dims[2]);
   const material = new THREE.MeshStandardMaterial({ 
     color: itemData.color, 
@@ -253,9 +275,8 @@ function spawn3DObject(itemData) {
   });
   const block = new THREE.Mesh(geometry, material);
 
-    // Position precisely flush on the upper line surface of your grid mesh layer boundary
   block.position.x = (Math.random() - 0.5) * 2;
-  block.position.y = itemData.dims[1] / 2; // Set height center flush with ground
+  block.position.y = itemData.dims[1] / 2;
   block.position.z = (Math.random() - 0.5) * 2;
 
   scene.add(block);
@@ -277,6 +298,9 @@ if (changeRoomBtn) {
     if (welcomeScreen) {
       welcomeScreen.style.display = 'flex';
       welcomeScreen.classList.remove('hidden');
+      welcomeScreen.style.opacity = '1';
+      welcomeScreen.style.visibility = 'visible';
+      welcomeScreen.style.pointerEvents = 'auto';
     }
   });
 }
@@ -285,7 +309,6 @@ if (sizeSelect) {
   sizeSelect.addEventListener('change', updateRoomDimensions);
 }
 
-// Handle browser window aspect ratio modifications smoothly
 window.addEventListener('resize', () => {
   const container = document.getElementById('blueprint-canvas');
   if (!container || !camera || !renderer) return;
@@ -293,7 +316,3 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(container.clientWidth, container.clientHeight);
 });
-
-    
-  
-  
