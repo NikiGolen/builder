@@ -49,166 +49,139 @@ const sizeSelect = document.getElementById('room-size-select');
 const footprintDims = document.getElementById('footprint-dims');
 const footprintArea = document.getElementById('footprint-area');
 
-const GRID_SIZE = 40;
-let currentLabel = '';
-let currentIcon = '';
+let scene, camera, renderer, floor;
+const spawnedObjects = [];
 let activeType = 'medsurg';
 
 // 3. Application Lifecycle Handlers
 function initializeWorkspace(type) {
   activeType = type;
-  updateCanvasDimensions();
-  welcomeScreen.classList.add('hidden');
+  document.getElementById('welcome-screen').classList.add('hidden');
+  init3DSpace();
+}
+// 4. Core Three.js Space Initialization Engine
+function init3DSpace() {
+  const container = document.getElementById('blueprint-canvas');
+  // Clear any leftover 2D grids inside the viewport container box
+  container.innerHTML = ''; 
+
+  // Establish scene, perspective camera placement, and WebGL renderer
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xcbd5e1); // Gray workspace field fill
+
+  camera = new THREE.PerspectiveCamera(45, container.clientWidth / 520, 0.1, 1000);
+  camera.position.set(0, 15, 15); // Look down at the room structure from an angle
+  camera.lookAt(0, 0, 0);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(container.clientWidth, 520);
+  container.appendChild(renderer.domElement);
+
+  // Mount light nodes into the digital rendering environment
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambientLight);
+
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  directionalLight.position.set(10, 20, 10);
+  scene.add(directionalLight);
+
+  // Render the white rectangular room floor box geometry
+  const floorGeo = new THREE.BoxGeometry(10, 0.2, 8); // scale metrics matching room ratios
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.position.set(0, -0.1, 0);
+  scene.add(floor);
+
+  // Apply a technical line grid map accent overlay across the flooring plane
+  const gridHelper = new THREE.GridHelper(10, 10, 0x475569, 0xe2e8f0);
+  gridHelper.position.y = 0.01;
+  scene.add(gridHelper);
+
+  // Initialize continuous frame loop updates
+  animate();
+  load3DMenuCatalog();
 }
 
-function updateCanvasDimensions() {
+// 5. Continuous Loop Animation Frame Render Cycles
+function animate() {
+  requestAnimationFrame(animate);
+  
+  // Apply a gentle slow rotation to visually showcase the true 3D layout tracking perspective
+  if (scene) {
+    scene.rotation.y += 0.002;
+  }
+  
+  renderer.render(scene, camera);
+}
+
+// 6. Sidebar Menu Rendering Engine
+function load3DMenuCatalog() {
   const config = catalogs[activeType];
   const sizeConfig = sizePresets[sizeSelect.value];
   
-  canvas.style.width = `${sizeConfig.width}px`;
-  canvas.style.height = `${sizeConfig.height}px`;
+  // Set toolbar blueprint text variables
   footprintDims.textContent = sizeConfig.readout;
   footprintArea.textContent = sizeConfig.area;
-
-  canvas.innerHTML = '';
-  canvas.className = 'canvas ' + config.themeClass;
-  catalogList.innerHTML = '';
-
   sidebarTitle.textContent = config.title;
   sidebarDesc.textContent = config.desc;
   activeRoomTitle.textContent = config.headline;
 
-  const zone = document.createElement('div');
-  zone.className = 'room-accent-zone';
-  zone.style.cssText = config.accentZone.style;
-  zone.textContent = config.accentZone.text;
-  canvas.appendChild(zone);
+  catalogList.innerHTML = ''; // Wipe past button panels
+  
+  // Map hex color coordinates to your dynamic sidebar elements
+  const objectColors = [0x2563eb, 0xdfb119, 0x10b981, 0xef4444, 0x8b5cf6];
 
-  config.items.forEach(item => {
-    const itemCard = document.createElement('div');
-    itemCard.className = 'draggable-item';
-    itemCard.setAttribute('draggable', 'true');
-    itemCard.setAttribute('data-label', item.label);
-    itemCard.setAttribute('data-icon', item.icon);
+  config.items.forEach((item, index) => {
+    const btn = document.createElement('div');
+    btn.className = 'draggable-item';
+    btn.style.cursor = 'pointer'; 
     
-    itemCard.innerHTML = `
-      <div class="item-icon" style="background: ${item.bg};">${item.icon}</div>
+    btn.innerHTML = `
+      <div class="item-icon" style="background: ${item.bg}; font-size: 1.25rem;">📦</div>
       <div>
         <strong>${item.label}</strong>
-        <p style="font-size: 0.75rem; color: #64748b;">${item.sub}</p>
+        <p style="font-size: 0.75rem; color: #64748b;">Click to Spawn 3D Block</p>
       </div>
     `;
-
-    itemCard.addEventListener('dragstart', () => {
-      currentLabel = itemCard.getAttribute('data-label');
-      currentIcon = itemCard.getAttribute('data-icon');
-    });
-
-    catalogList.appendChild(itemCard);
-  });
-}
-
-// 4. Drag & Drop Event Hooks
-sizeSelect.addEventListener('change', updateCanvasDimensions);
-canvas.addEventListener('dragover', (e) => e.preventDefault());
-
-canvas.addEventListener('drop', (e) => {
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const borderLeft = activeType === 'pharmacy' ? 10 : 0;
-  const borderTop = activeType === 'medsurg' ? 10 : 0;
-  
-  let x = e.clientX - rect.left - borderLeft;
-  let y = e.clientY - rect.top - borderTop;
-
-  x = Math.floor(x / GRID_SIZE) * GRID_SIZE;
-  y = Math.floor(y / GRID_SIZE) * GRID_SIZE;
-
-  const maxW = rect.width - borderLeft;
-  const maxH = rect.height - borderTop;
-
-  if (x < 0) x = 0;
-  if (y < 0) y = 0;
-  if (x > maxW - (GRID_SIZE * 2)) x = Math.floor((maxW - (GRID_SIZE * 2)) / GRID_SIZE) * GRID_SIZE;
-  if (y > maxH - (GRID_SIZE * 2)) y = Math.floor((maxH - (GRID_SIZE * 2)) / GRID_SIZE) * GRID_SIZE;
-
-  spawnBlueprintAsset(x, y, currentIcon, currentLabel);
-});
-
-function spawnBlueprintAsset(x, y, icon, label) {
-  const assetWrapper = document.createElement('div');
-  assetWrapper.className = 'placed-item';
-  assetWrapper.style.left = `${x}px`;
-  assetWrapper.style.top = `${y}px`;
-
-  assetWrapper.innerHTML = `
-    <span class="placed-icon">${icon}</span>
-    <span class="placed-label">${label}</span>
-    <button class="delete-btn">×</button>
-  `;
-
-  assetWrapper.querySelector('.delete-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    assetWrapper.remove();
-  });
-
-  bindAssetDraggability(assetWrapper);
-  canvas.appendChild(assetWrapper);
-}
-
-function bindAssetDraggability(item) {
-  let activeMove = false;
-  let startX, startY;
-
-  item.addEventListener('mousedown', (e) => {
-    if (e.target.className === 'delete-btn') return;
-    activeMove = true;
-    startX = e.clientX - item.offsetLeft;
-    startY = e.clientY - item.offsetTop;
-    item.style.zIndex = 1000;
-  });
-
-  document.addEventListener('mousemove', (e) => {
-    if (!activeMove) return;
-    const rect = canvas.getBoundingClientRect();
-    const borderLeft = activeType === 'pharmacy' ? 10 : 0;
-    const borderTop = activeType === 'medsurg' ? 10 : 0;
     
-    let newX = e.clientX - startX;
-    let newY = e.clientY - startY;
-
-    newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
-    newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
-
-    const maxW = rect.width - borderLeft;
-    const maxH = rect.height - borderTop;
-
-    if (newX < 0) newX = 0;
-    if (newY < 0) newY = 0;
-    if (newX > maxW - item.offsetWidth) {
-      newX = Math.floor((maxW - item.offsetWidth) / GRID_SIZE) * GRID_SIZE;
-    }
-    if (newY > maxH - item.offsetHeight) {
-      newY = Math.floor((maxH - item.offsetHeight) / GRID_SIZE) * GRID_SIZE;
-    }
-
-    item.style.left = `${newX}px`;
-    item.style.top = `${newY}px`;
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (activeMove) {
-      activeMove = false;
-      item.style.zIndex = '';
-    }
+    // Wire button listener to throw a distinct 3D element box model onto the grid floor
+    const assignedColor = objectColors[index % objectColors.length];
+    btn.addEventListener('click', () => spawn3DObject(assignedColor));
+    catalogList.appendChild(btn);
   });
 }
 
-// 5. Utility Command Routing
+function spawn3DObject(colorHex) {
+  // Generate a distinct box shape vector mesh
+  const geometry = new THREE.BoxGeometry(1.2, 1.5, 0.8);
+  const material = new THREE.MeshStandardMaterial({ color: colorHex });
+  const block = new THREE.Mesh(geometry, material);
+
+  // Spread out object points organically so items don't clip on initial placement
+  block.position.x = (Math.random() - 0.5) * 6;
+  block.position.y = 0.75; 
+  block.position.z = (Math.random() - 0.5) * 4;
+
+  scene.add(block);
+  spawnedObjects.push(block);
+}
+
+// 7. Core Command Clear/Reset Triggers
 clearBtn.addEventListener('click', () => {
-  canvas.querySelectorAll('.placed-item').forEach(item => item.remove());
+  if (scene) {
+    spawnedObjects.forEach(obj => scene.remove(obj));
+    spawnedObjects.length = 0;
+  }
 });
 
 changeRoomBtn.addEventListener('click', () => {
   welcomeScreen.classList.remove('hidden');
+});
+
+sizeSelect.addEventListener('change', () => {
+  if (scene) {
+    const sizeConfig = sizePresets[sizeSelect.value];
+    footprintDims.textContent = sizeConfig.readout;
+    footprintArea.textContent = sizeConfig.area;
+  }
 });
