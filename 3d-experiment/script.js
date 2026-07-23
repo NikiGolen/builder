@@ -75,7 +75,6 @@ function initializeWorkspace(type) {
   init3DSpace();
 }
 
-// Fixed Fail-Safe Click Bridge
 document.addEventListener('DOMContentLoaded', () => {
   const choiceButtons = document.querySelectorAll('.choice-btn');
   if (choiceButtons.length >= 2) {
@@ -91,14 +90,45 @@ function init3DSpace() {
   container.innerHTML = ''; 
 
   scene = new THREE.Scene();
-  // Clean white marble canvas backdrop with subtle luxury tone
-  scene.background = new THREE.Color(0xf8fafc);
 
-  camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+  // Procedural Marble Background Generator
+  const canvasTex = document.createElement('canvas');
+  canvasTex.width = 512;
+  canvasTex.height = 512;
+  const ctx = canvasTex.getContext('2d');
+  
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, 512, 512);
+  
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, 100);
+  ctx.bezierCurveTo(200, 150, 300, 50, 512, 200);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(0, 350);
+  ctx.bezierCurveTo(150, 400, 400, 300, 512, 420);
+  ctx.stroke();
+
+  scene.background = new THREE.CanvasTexture(canvasTex);
+
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+
+  camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
   camera.position.set(0, 12, 14); 
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+  renderer.setSize(width, height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  
+  // Enforce 100% block layout directly on canvas style to avoid side pixel strips
+  renderer.domElement.style.display = 'block';
+  renderer.domElement.style.width = '100%';
+  renderer.domElement.style.height = '100%';
+  
   container.appendChild(renderer.domElement);
 
   controls = new OrbitControls(camera, renderer.domElement);
@@ -113,7 +143,6 @@ function init3DSpace() {
   directionalLight.position.set(15, 25, 10);
   scene.add(directionalLight);
 
-  // Polished marble-white flooring tile base
   const floorGeo = new THREE.BoxGeometry(1, 0.2, 1); 
   const floorMat = new THREE.MeshStandardMaterial({ 
     color: 0xffffff, 
@@ -124,7 +153,6 @@ function init3DSpace() {
   floor.position.set(0, -0.1, 0);
   scene.add(floor);
 
-  // High-contrast deep navy blue marble veining grid lines
   gridHelper = new THREE.GridHelper(1, 1, 0x1e3a8a, 0x93c5fd);
   gridHelper.position.y = 0.01;
   scene.add(gridHelper);
@@ -203,27 +231,23 @@ function updateRoomWalls() {
     side: THREE.DoubleSide 
   });
 
-  // Back Wall (-Z)
   const backGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, wallHeight, wallThickness);
   const backWall = new THREE.Mesh(backGeo, createWallMaterial());
   backWall.position.set(0, wallHeight / 2, -halfZ - (wallThickness / 2));
   scene.add(backWall);
   wallsData.back = { mesh: backWall, normal: new THREE.Vector3(0, 0, -1) };
 
-  // Front Wall (+Z)
   const frontWall = new THREE.Mesh(backGeo, createWallMaterial());
   frontWall.position.set(0, wallHeight / 2, halfZ + (wallThickness / 2));
   scene.add(frontWall);
   wallsData.front = { mesh: frontWall, normal: new THREE.Vector3(0, 0, 1) };
 
-  // Left Wall (-X)
   const sideGeo = new THREE.BoxGeometry(wallThickness, wallHeight, sizeConfig.floorScale.z);
   const leftWall = new THREE.Mesh(sideGeo, createWallMaterial());
   leftWall.position.set(-halfX - (wallThickness / 2), wallHeight / 2, 0);
   scene.add(leftWall);
   wallsData.left = { mesh: leftWall, normal: new THREE.Vector3(-1, 0, 0) };
 
-  // Right Wall (+X)
   const rightWall = new THREE.Mesh(sideGeo, createWallMaterial());
   rightWall.position.set(halfX + (wallThickness / 2), wallHeight / 2, 0);
   scene.add(rightWall);
@@ -310,28 +334,24 @@ function spawn3DObject(itemData) {
   const group = new THREE.Group();
 
   if (itemData.label === "Patient Bed") {
-    // 1. Frame Base / Understructure (Off-white clinical metal)
     const baseGeo = new THREE.BoxGeometry(1.2, 0.2, 2.0);
     const frameMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 });
     const baseMesh = new THREE.Mesh(baseGeo, frameMat);
     baseMesh.position.y = 0.2;
     group.add(baseMesh);
 
-    // 2. Lower Mattress Section (Plush dark purple/plum hospital mattress)
     const mattressGeo = new THREE.BoxGeometry(1.3, 0.35, 2.1);
     const mattressMat = new THREE.MeshStandardMaterial({ color: 0x581c87, roughness: 0.7 });
     const mattressMesh = new THREE.Mesh(mattressGeo, mattressMat);
     mattressMesh.position.y = 0.475;
     group.add(mattressMesh);
 
-    // 3. Articulated Head Section (Tilted up)
     const headGeo = new THREE.BoxGeometry(1.3, 0.35, 0.8);
     const headMesh = new THREE.Mesh(headGeo, mattressMat);
     headMesh.position.set(0, 0.65, -0.7);
     headMesh.rotation.x = Math.PI / 6;
     group.add(headMesh);
 
-    // 4. Headboard & Footboard (White panels)
     const boardGeo = new THREE.BoxGeometry(1.35, 0.6, 0.1);
     const boardMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
     
@@ -368,7 +388,7 @@ if (clearBtn) {
   clearBtn.addEventListener('click', () => {
     if (scene) {
       spawnedObjects.forEach(obj => scene.remove(obj));
-      spawnedObjects.length = 0;
+      spawnedObjects.length, spawnedObjects.length = 0;
     }
   });
 }
@@ -392,7 +412,11 @@ if (sizeSelect) {
 window.addEventListener('resize', () => {
   const container = document.getElementById('blueprint-canvas');
   if (!container || !camera || !renderer) return;
-  camera.aspect = container.clientWidth / container.clientHeight;
+  
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+  
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
-  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setSize(width, height);
 });
