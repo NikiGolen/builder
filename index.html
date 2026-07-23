@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SimLab Multiverse Builder Sandbox</title>
-  
- <style>
+  <style>
     :root {
       --primary: #0284c7;
       --dark: #0f172a;
@@ -17,12 +16,12 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
     body { display: flex; height: 100vh; background: var(--light); color: var(--dark); overflow: hidden; }
 
-    /* 1. Welcome / Screen Selection Panel Overlay */
+    /* Welcome / Screen Selection Panel Overlay */
     .dashboard-overlay { position: fixed; inset: 0; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.4s ease, visibility 0.4s; }
     .dashboard-overlay.hidden { opacity: 0; visibility: hidden; }
     
     .welcome-card { background: white; padding: 3rem; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); text-align: center; max-width: 600px; width: 90%; }
-    .welcome-card h1 { font-size: 2rem; color: #1e293b; margin-bottom: 0.5rem; }
+    .welcome-card h1 { font-size: 1.75rem; color: #1e293b; margin-bottom: 0.5rem; }
     .welcome-card p { color: #64748b; margin-bottom: 2rem; }
     
     .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
@@ -32,11 +31,17 @@
     .choice-btn strong { font-size: 1.1rem; color: #1e293b; }
     .choice-btn span { font-size: 0.8rem; color: #64748b; }
 
-    /* 2. Main Builder Application Layout Split */
+    /* Main Builder Application Layout Split */
     .sidebar { width: 340px; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
     .sidebar-header { padding: 1.5rem; border-bottom: 1px solid var(--border); background: #f0f9ff; }
     .sidebar-header h2 { font-size: 1.25rem; font-weight: 700; color: #0369a1; margin-bottom: 0.25rem; }
     .sidebar-header p { font-size: 0.85rem; color: #64748b; }
+    
+    /* Room Target Size Controls Selector */
+    .dimension-control { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); background: #f8fafc; }
+    .dimension-control label { font-size: 0.8rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.5rem; }
+    .dimension-control select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; outline: none; background: white; font-size: 0.9rem; font-weight: 500; }
+    
     .component-list { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; flex-grow: 1; }
     
     /* Draggable Catalog Items */
@@ -49,6 +54,11 @@
     .toolbar { height: 60px; background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; }
     .room-title { font-weight: 600; font-size: 1.1rem; color: #334155; }
     
+    /* Dynamic Stats Display Layout */
+    .stats-panel { display: flex; gap: 1.5rem; font-size: 0.85rem; background: #f1f5f9; padding: 0.4rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border); }
+    .stat-badge { font-weight: 500; color: #475569; }
+    .stat-badge span { font-weight: 700; color: var(--primary); }
+
     .nav-buttons { display: flex; gap: 0.75rem; }
     .toolbar-btn { border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
     .change-room-btn { background: #64748b; color: white; }
@@ -57,10 +67,10 @@
 
     .canvas-container { flex-grow: 1; position: relative; overflow: auto; padding: 2rem; display: flex; align-items: center; justify-content: center; background: #e2e8f0; }
     
-    /* Canvas Structural Blueprint Background Grid */
-    .canvas { width: 840px; height: 600px; background: white; border-radius: 0.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); position: relative; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: var(--grid-size) var(--grid-size); }
+    /* Responsive Canvas Blueprint Target Grid Frame */
+    .canvas { background: white; border-radius: 0.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); position: relative; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: var(--grid-size) var(--grid-size); transition: width 0.3s ease, height 0.3s ease; }
     
-    /* Dynamic Room Overlay Accent Overrides */
+    /* Theme Boundaries Overrides */
     .canvas.medsurg-theme { border-top: 12px solid #64748b; }
     .canvas.pharmacy-theme { border-left: 12px solid #0d9488; }
     
@@ -74,7 +84,6 @@
     
     .delete-btn { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: #ef4444; color: white; border: none; border-radius: 50%; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
   </style>
-
 </head>
 <body>
 
@@ -105,15 +114,33 @@
       <h2 id="sidebar-title">SimLab Equipment</h2>
       <p id="sidebar-desc">Drag items onto the canvas blueprint</p>
     </div>
+    
+    <!-- Target Room Dimension Scaler Selector Component -->
+    <div class="dimension-control">
+      <label for="room-size-select">Target Lab Footprint Size:</label>
+      <select id="room-size-select">
+        <option value="small">Small Consultation Slot (approx. 160 sq ft)</option>
+        <option value="medium" selected>Standard Training Footprint (approx. 315 sq ft)</option>
+        <option value="large">Comprehensive Ward Suite (approx. 480 sq ft)</option>
+      </select>
+    </div>
+
     <div class="component-list" id="catalog-list">
       <!-- Items dynamically spawned via script depending on room choice -->
     </div>
   </div>
 
-  <!-- Workspace & Active Canvas -->
+  <!-- Workspace & Active Canvas Layout Frame -->
   <div class="workspace-container">
     <div class="toolbar">
       <div class="room-title" id="active-room-title">Template Workspace</div>
+      
+      <!-- Room Blueprint Active Footprint Readout Panel -->
+      <div class="stats-panel">
+        <div class="stat-badge">Dimensions: <span id="footprint-dims">24ft x 13ft</span></div>
+        <div class="stat-badge">Total Area: <span id="footprint-area">312 sq ft</span></div>
+      </div>
+
       <div class="nav-buttons">
         <button class="toolbar-btn change-room-btn" id="change-room">🔄 Change Lab Type</button>
         <button class="toolbar-btn reset-btn" id="clear-workspace">Clear Grid</button>
@@ -126,7 +153,13 @@
   </div>
 
 <script>
-    // Distinct catalog models split by simulation category
+    // Configuration blueprints mapping pixels to realistic feet scaling
+    const sizePresets = {
+      small: { width: 480, height: 360, readout: "12ft x 9ft", area: "108 sq ft" },
+      medium: { width: 720, height: 440, readout: "18ft x 11ft", area: "198 sq ft" },
+      large: { width: 840, height: 560, readout: "21ft x 14ft", area: "294 sq ft" }
+    };
+
     const catalogs = {
       medsurg: {
         title: "Med-Surg Room Builder",
@@ -166,26 +199,41 @@
     const activeRoomTitle = document.getElementById('active-room-title');
     const clearBtn = document.getElementById('clear-workspace');
     const changeRoomBtn = document.getElementById('change-room');
+    const sizeSelect = document.getElementById('room-size-select');
+    const footprintDims = document.getElementById('footprint-dims');
+    const footprintArea = document.getElementById('footprint-area');
     
     const GRID_SIZE = 40;
     let currentLabel = '';
     let currentIcon = '';
+    let activeType = 'medsurg';
 
-    // Engine to render correct room data models
     function initializeWorkspace(type) {
-      const config = catalogs[type];
+      activeType = type;
+      updateCanvasDimensions();
+      welcomeScreen.classList.add('hidden');
+    }
+
+    function updateCanvasDimensions() {
+      const config = catalogs[activeType];
+      const sizeConfig = sizePresets[sizeSelect.value];
       
-      // Clean previous configurations
+      // Update canvas footprint dimensions
+      canvas.style.width = `${sizeConfig.width}px`;
+      canvas.style.height = `${sizeConfig.height}px`;
+      footprintDims.textContent = sizeConfig.readout;
+      footprintArea.textContent = sizeConfig.area;
+
+      // Clean canvas inner content while maintaining structure
       canvas.innerHTML = '';
       canvas.className = 'canvas ' + config.themeClass;
       catalogList.innerHTML = '';
 
-      // Update static header content fields
       sidebarTitle.textContent = config.title;
       sidebarDesc.textContent = config.desc;
       activeRoomTitle.textContent = config.headline;
 
-      // Mount physical wall accents inside visual layout
+      // Mount physical wall accents inside the resized layout bounds
       const zone = document.createElement('div');
       zone.className = 'room-accent-zone';
       zone.style.cssText = config.accentZone.style;
@@ -215,12 +263,11 @@
 
         catalogList.appendChild(itemCard);
       });
-
-      // Clear layout transition view state masks
-      welcomeScreen.classList.add('hidden');
     }
 
-    // Drag over standard processing hooks
+    // Process dropdown change triggers dynamically
+    sizeSelect.addEventListener('change', updateCanvasDimensions);
+
     canvas.addEventListener('dragover', (e) => e.preventDefault());
 
     canvas.addEventListener('drop', (e) => {
@@ -299,7 +346,6 @@
       });
     }
 
-    // Canvas management tracking buttons
     clearBtn.addEventListener('click', () => {
       canvas.querySelectorAll('.placed-item').forEach(item => item.remove());
     });
