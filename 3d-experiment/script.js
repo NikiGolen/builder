@@ -15,7 +15,8 @@ const catalogs = {
     headline: "Template Workspace: Medical-Surgical Ward Simulation",
     themeClass: "medsurg-theme",
     items: [
-      { label: "Patient Bed", icon: "🛏️", sub: "Multi-position electric model", bg: "#e0f2fe", dims: [1.4, 1.0, 2.2], color: 0x0284c7 },
+      { label: "Patient Bed", icon: "🛏️", sub: "Multi-position electric model", bg: "#e0f2fe", dims: [1.4, 0.7, 2.2], color: 0x0284c7 },
+      { label: "Medical Headwall", icon: "🔌", sub: "Integrated gas & electrical panel", bg: "#e0f2fe", dims: [1.6, 0.9, 0.3], color: 0x334155 },
       { label: "Adult Manikin", icon: "🧍", sub: "High-Fidelity Patient Simulator", bg: "#f1f5f9", dims: [0.6, 0.4, 1.8], color: 0x64748b },
       { label: "IV Pump", icon: "⚗️", sub: "Dual-line medication pole", bg: "#dcfce7", dims: [0.8, 2.0, 0.8], color: 0x22c55e },
       { label: "Overbed Table", icon: "🪵", sub: "Height-adjustable tray", bg: "#fef3c7", dims: [1.0, 0.9, 0.5], color: 0xd97706 },
@@ -124,7 +125,6 @@ function init3DSpace() {
   renderer.setSize(width, height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   
-  // Enforce 100% block layout directly on canvas style to avoid side pixel strips
   renderer.domElement.style.display = 'block';
   renderer.domElement.style.width = '100%';
   renderer.domElement.style.height = '100%';
@@ -212,7 +212,7 @@ function setupInteractionEvents(container) {
   });
 }
 
-// 6. Sizing & Dynamic Sims-Style Wall Fading Modifiers
+// 6. Sizing & Dynamic Sims-Style Wall Fading Modifiers (Lowered wall height to 0.8)
 function updateRoomWalls() {
   Object.values(wallsData).forEach(data => scene.remove(data.mesh));
   wallsData = {};
@@ -220,7 +220,7 @@ function updateRoomWalls() {
   const sizeConfig = sizePresets[sizeSelect.value];
   const halfX = sizeConfig.floorScale.x / 2;
   const halfZ = sizeConfig.floorScale.z / 2;
-  const wallHeight = 1.2; 
+  const wallHeight = 0.8; // Proportionately lower walls so furniture looks balanced
   const wallThickness = 0.2;
 
   const createWallMaterial = () => new THREE.MeshStandardMaterial({ 
@@ -334,34 +334,61 @@ function spawn3DObject(itemData) {
   const group = new THREE.Group();
 
   if (itemData.label === "Patient Bed") {
-    const baseGeo = new THREE.BoxGeometry(1.2, 0.2, 2.0);
+    // Lowered profile scale for the bed to fit the room height perfectly
+    const baseGeo = new THREE.BoxGeometry(1.2, 0.15, 2.0);
     const frameMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 });
     const baseMesh = new THREE.Mesh(baseGeo, frameMat);
-    baseMesh.position.y = 0.2;
+    baseMesh.position.y = 0.15;
     group.add(baseMesh);
 
-    const mattressGeo = new THREE.BoxGeometry(1.3, 0.35, 2.1);
+    const mattressGeo = new THREE.BoxGeometry(1.3, 0.25, 2.1);
     const mattressMat = new THREE.MeshStandardMaterial({ color: 0x581c87, roughness: 0.7 });
     const mattressMesh = new THREE.Mesh(mattressGeo, mattressMat);
-    mattressMesh.position.y = 0.475;
+    mattressMesh.position.y = 0.35;
     group.add(mattressMesh);
 
-    const headGeo = new THREE.BoxGeometry(1.3, 0.35, 0.8);
+    const headGeo = new THREE.BoxGeometry(1.3, 0.25, 0.8);
     const headMesh = new THREE.Mesh(headGeo, mattressMat);
-    headMesh.position.set(0, 0.65, -0.7);
+    headMesh.position.set(0, 0.48, -0.7);
     headMesh.rotation.x = Math.PI / 6;
     group.add(headMesh);
 
-    const boardGeo = new THREE.BoxGeometry(1.35, 0.6, 0.1);
+    const boardGeo = new THREE.BoxGeometry(1.35, 0.45, 0.1);
     const boardMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
     
     const headBoard = new THREE.Mesh(boardGeo, boardMat);
-    headBoard.position.set(0, 0.6, -1.05);
+    headBoard.position.set(0, 0.45, -1.05);
     group.add(headBoard);
 
     const footBoard = new THREE.Mesh(boardGeo, boardMat);
-    footBoard.position.set(0, 0.6, 1.05);
+    footBoard.position.set(0, 0.45, 1.05);
     group.add(footBoard);
+
+  } else if (itemData.label === "Medical Headwall") {
+    // Realistic clinical headwall model with vertical utility trunk and rail modules
+    const wallPanelGeo = new THREE.BoxGeometry(1.6, 0.7, 0.15);
+    const wallPanelMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.2 });
+    const wallPanel = new THREE.Mesh(wallPanelGeo, wallPanelMat);
+    wallPanel.position.y = 0.5;
+    group.add(wallPanel);
+
+    // Integrated medical gas/electrical service strip
+    const stripGeo = new THREE.BoxGeometry(1.5, 0.15, 0.05);
+    const stripMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.4 });
+    const strip = new THREE.Mesh(stripGeo, stripMat);
+    strip.position.set(0, 0.5, 0.08);
+    group.add(strip);
+
+    // Color-coded medical gas outlet plugs (Oxygen, Vacuum, Medical Air)
+    const outletGeo = new THREE.BoxGeometry(0.12, 0.08, 0.02);
+    const colors = [0x22c55e, 0xef4444, 0x3b82f6]; // Green, Red, Blue
+    
+    for (let i = -1; i <= 1; i++) {
+      const outletMat = new THREE.MeshStandardMaterial({ color: colors[i + 1] });
+      const outlet = new THREE.Mesh(outletGeo, outletMat);
+      outlet.position.set(i * 0.35, 0.5, 0.11);
+      group.add(outlet);
+    }
 
   } else {
     const geometry = new THREE.BoxGeometry(itemData.dims[0], itemData.dims[1], itemData.dims[2]);
@@ -388,7 +415,7 @@ if (clearBtn) {
   clearBtn.addEventListener('click', () => {
     if (scene) {
       spawnedObjects.forEach(obj => scene.remove(obj));
-      spawnedObjects.length, spawnedObjects.length = 0;
+      spawnedObjects.length = 0;
     }
   });
 }
