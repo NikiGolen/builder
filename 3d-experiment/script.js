@@ -151,8 +151,7 @@ function setupInteractionEvents(container) {
       controls.enabled = false; // Turn off orbital viewing while manipulation is active
     }
   });
-
-  container.addEventListener('pointermove', (e) => {
+container.addEventListener('pointermove', (e) => {
     if (!selectedMesh) return;
 
     const bounds = container.getBoundingClientRect();
@@ -162,12 +161,20 @@ function setupInteractionEvents(container) {
     raycaster.setFromCamera(mouseVector, camera);
     
     if (raycaster.ray.intersectPlane(routingPlane, planeIntersectionPoint)) {
-      // Clean boundary snap mechanism matching your 0.5-unit footprint grid matrix
-      selectedMesh.position.x = Math.round(planeIntersectionPoint.x / 0.5) * 0.5;
-      selectedMesh.position.z = Math.round(planeIntersectionPoint.z / 0.5) * 0.5;
+      // Get current room size configuration limits to keep objects inside
+      const sizeConfig = sizePresets[sizeSelect.value];
+      const maxX = (sizeConfig.floorScale.x / 2) - 0.5;
+      const maxZ = (sizeConfig.floorScale.z / 2) - 0.5;
+
+      // Clamp coordinates to stay strictly inside the room boundaries
+      const clampedX = Math.max(-maxX, Math.min(maxX, planeIntersectionPoint.x));
+      const clampedZ = Math.max(-maxZ, Math.min(maxZ, planeIntersectionPoint.z));
+
+      selectedMesh.position.x = Math.round(clampedX / 0.5) * 0.5;
+      selectedMesh.position.z = Math.round(clampedZ / 0.5) * 0.5;
     }
   });
-
+ 
   window.addEventListener('pointerup', () => {
     selectedMesh = null;
     if (controls) controls.enabled = true; // Restore camera tracking mechanics safely
