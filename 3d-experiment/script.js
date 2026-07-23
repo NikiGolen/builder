@@ -91,7 +91,8 @@ function init3DSpace() {
   container.innerHTML = ''; 
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xdfb119); // Pocket Nurse brand gold background
+  // Clean white marble canvas backdrop with subtle luxury tone
+  scene.background = new THREE.Color(0xf8fafc);
 
   camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
   camera.position.set(0, 12, 14); 
@@ -105,20 +106,26 @@ function init3DSpace() {
   controls.dampingFactor = 0.05;
   controls.maxPolarAngle = Math.PI / 2 - 0.05;
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
   scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.85);
   directionalLight.position.set(15, 25, 10);
   scene.add(directionalLight);
 
+  // Polished marble-white flooring tile base
   const floorGeo = new THREE.BoxGeometry(1, 0.2, 1); 
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
+  const floorMat = new THREE.MeshStandardMaterial({ 
+    color: 0xffffff, 
+    roughness: 0.15, 
+    metalness: 0.05 
+  });
   floor = new THREE.Mesh(floorGeo, floorMat);
   floor.position.set(0, -0.1, 0);
   scene.add(floor);
 
-  gridHelper = new THREE.GridHelper(1, 1, 0x475569, 0xcbd5e1);
+  // High-contrast deep navy blue marble veining grid lines
+  gridHelper = new THREE.GridHelper(1, 1, 0x1e3a8a, 0x93c5fd);
   gridHelper.position.y = 0.01;
   scene.add(gridHelper);
 
@@ -129,7 +136,7 @@ function init3DSpace() {
   load3DMenuCatalog();
 }
 
-// 5. Drag-and-Drop Raycasting Module Logic (Fixed to test all spawned items)
+// 5. Drag-and-Drop Raycasting Module Logic
 function setupInteractionEvents(container) {
   container.addEventListener('pointerdown', (e) => {
     const bounds = container.getBoundingClientRect();
@@ -140,7 +147,6 @@ function setupInteractionEvents(container) {
     const hits = raycaster.intersectObjects(spawnedObjects, true);
 
     if (hits.length > 0) {
-      // Traverse up to find the root mesh object stored in spawnedObjects
       let obj = hits[0].object;
       while (obj.parent && obj.parent !== scene && !spawnedObjects.includes(obj)) {
         obj = obj.parent;
@@ -237,7 +243,7 @@ function updateRoomDimensions() {
   gridHelper = new THREE.GridHelper(
     Math.max(sizeConfig.floorScale.x, sizeConfig.floorScale.z), 
     Math.max(sizeConfig.floorScale.x, sizeConfig.floorScale.z), 
-    0x64748b, 0x94a3b8
+    0x1e3a8a, 0x93c5fd
   );
   gridHelper.position.y = 0.01;
   scene.add(gridHelper);
@@ -291,7 +297,9 @@ function load3DMenuCatalog() {
       </div>
     `;
     
-    btn.addEventListener('click', () => spawn3DObject(item));
+    btn.addEventListener('click', () => {
+      spawn3DObject(item);
+    });
     catalogList.appendChild(btn);
   });
 }
