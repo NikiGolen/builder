@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pocket Nurse® 3D SimLab Sandbox</title>
+  
+  <!-- We pull in our main brand style sheet from the folder above -->
+  <link rel="stylesheet" href="../style.css">
+  
+  <!-- We load the 3D rendering library engine from a safe public server -->
+  <script src="https://cloudflare.com"></script>
+</head>
+<body>
+
+  <!-- Top Utility Link Bar -->
+  <div class="pn-utility-top">
+    <div class="pn-utility-inner">
+      <span>Sign In / Register</span> | <span>Catalog Request</span> | <span>Quick order</span> | <span>Join PN Email List</span> | <span>Quotes 0</span> 🛒
+    </div>
+  </div>
+
+  <!-- Centered Header Block Row -->
+  <header class="pn-storefront-header">
+    <div class="pn-header-content-area">
+      <div class="pn-centered-logo-wrapper">
+        <!-- Pulls our brand photo.jpg asset safely from the directory above -->
+        <img src="../photo.jpg" alt="Pocket Nurse® Logo" class="pn-brand-logo-img">
+      </div>
+    </div>
+  </header>
+
+  <!-- Dark Horizontal Storefront Primary Navigation Bar Strip -->
+  <nav class="pn-dark-navbar">
+    <div class="pn-navbar-inner">
+      <div class="pn-nav-links">
+        <span class="active-category">PRODUCTS ▾</span>
+        <span>NEW ITEMS</span>
+        <span>CLEARANCE</span>
+        <span>CONTACT US</span>
+        <span>CUSTOMER TESTIMONIALS</span>
+        <span>BUILD A KIT</span>
+      </div>
+      <div class="pn-search-mock">
+        <input type="text" placeholder="Enter Keyword or Item">
+        <button class="pn-search-icon-btn">🔍</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main 1200px Content Window Grid Wrapper -->
+  <div class="pn-main-grid-viewport">
+
+    <div class="dashboard-overlay" id="welcome-screen">
+      <div class="welcome-card">
+        <h1>What 3D simulation Lab would you like to build?</h1>
+        <p>Select a room template category to load dynamic 3D dimensional blocks.</p>
+        <div class="options-grid">
+          <button class="choice-btn" onclick="initializeWorkspace('medsurg')">
+            <span class="choice-icon">🛏️</span>
+            <strong>Med-Surg Hospital Room</strong>
+            <span>3D Block Sandbox Model</span>
+          </button>
+          <button class="choice-btn" onclick="initializeWorkspace('pharmacy')">
+            <span class="choice-icon">🧪</span>
+            <strong>Pharmacy Lab</strong>
+            <span>3D Block Sandbox Model</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Element Window Drawer -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2 id="sidebar-title">3D SimLab Equipment</h2>
+        <p id="sidebar-desc">Click item blocks to spawn inside the room</p>
+      </div>
+      <div class="dimension-control">
+        <label for="room-size-select">Baseline Layout Constraint:</label>
+        <select id="room-size-select">
+          <option value="small">Small Consultation Slot (~150 sq ft)</option>
+          <option value="medium" selected>Standard Training Footprint (~315 sq ft)</option>
+          <option value="large">Comprehensive Ward Suite (~480 sq ft)</option>
+        </select>
+      </div>
+      <div class="component-list" id="catalog-list"></div>
+    </div>
+
+    <!-- Workspace Container Element Layout Frame -->
+    <div class="workspace-container">
+      <div class="toolbar">
+        <div class="room-title" id="active-room-title">3D Rendering Viewport</div>
+        <div class="stats-panel">
+          <div class="stat-badge">Scale Dims: <span id="footprint-dims">18ft x 13ft</span></div>
+          <div class="stat-badge">Calculated Area: <span id="footprint-area">234 sq ft</span></div>
+        </div>
+        <div class="nav-buttons">
+          <button class="toolbar-btn change-room-btn" id="change-room">🔄 Change Lab</button>
+          <button class="toolbar-btn reset-btn" id="clear-workspace">Clear Grid</button>
+        </div>
+      </div>
+      <div class="canvas-container">
+        <!-- Three.js will inject our 3D canvas viewport directly into this div container box -->
+        <div class="canvas" id="blueprint-canvas"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Triggers our local 3D engine scripts inside the subfolder -->
+  <script src="script.js"></script>
+</body>
+</html>
