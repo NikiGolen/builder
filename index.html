@@ -6,7 +6,7 @@
   <title>Pocket Nurse® SimLab Builder Sandbox</title>
   
   <!-- PART 2  -->
-    <style>
+   <style>
     :root {
       --pn-navy: #2d3748;       
       --pn-gold: #dfb119;       
@@ -23,26 +23,25 @@
     .pn-utility-inner { max-width: 1200px; margin: 0 auto; padding: 0 15px; font-weight: 500; }
     .pn-utility-inner span { cursor: default; margin: 0 4px; }
 
-    .pn-brand-header { background: white; padding: 1.5rem 0; }
-    .pn-brand-inner { max-width: 1200px; margin: 0 auto; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; }
+    .pn-storefront-header { background: white; padding: 1.5rem 0 1rem 0; width: 100%; border-bottom: 1px solid #e2e8f0; }
+    .pn-header-content-area { max-width: 1200px; margin: 0 auto; padding: 0 15px; display: flex; flex-direction: column; align-items: center; position: relative; }
     
-    .pn-logo-box { display: flex; align-items: center; gap: 15px; }
-    .pn-logo-shield { width: 56px; height: 50px; background: var(--pn-gold); border-radius: 6px; position: relative; display: flex; align-items: center; justify-content: center; }
-    .pn-logo-heart { width: 28px; height: 28px; background: white; position: relative; transform: rotate(-45deg); top: -2px; }
-    .pn-logo-heart::before, .pn-logo-heart::after { content: ""; width: 28px; height: 28px; background: white; border-radius: 50%; position: absolute; }
-    .pn-logo-heart::before { top: -14px; left: 0; }
-    .pn-logo-heart::after { top: 0; left: 14px; }
+    .pn-centered-logo-wrapper { display: flex; align-items: center; justify-content: center; gap: 15px; width: 100%; text-align: center; }
+    .pn-logo-shield-element { width: 62px; height: 55px; background: var(--pn-gold); border-radius: 6px; position: relative; display: flex; align-items: center; justify-content: center; }
+    .pn-logo-heart-node { width: 30px; height: 30px; background: white; position: relative; transform: rotate(-45deg); top: -2px; }
+    .pn-logo-heart-node::before, .pn-logo-heart-node::after { content: ""; width: 30px; height: 30px; background: white; border-radius: 50%; position: absolute; }
+    .pn-logo-heart-node::before { top: -15px; left: 0; }
+    .pn-logo-heart-node::after { top: 0; left: 14px; }
     
-    .pn-logo-text h2 { font-size: 2.2rem; font-weight: 800; color: var(--pn-navy); letter-spacing: -0.03em; line-height: 1; }
-    .pn-logo-text h2 span { font-weight: 400; font-size: 1.2rem; position: relative; top: -10px; }
-    .pn-logo-text p { font-size: 0.95rem; font-weight: 600; color: #4a5568; margin-top: 2px; letter-spacing: 0.02em; }
-    .pn-header-tagline { font-size: 0.85rem; font-weight: 600; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; }
+    .pn-logo-text-stack h2 { font-size: 2.6rem; font-weight: 800; color: var(--pn-navy); letter-spacing: -0.04em; line-height: 0.95; }
+    .pn-logo-text-stack h2 span { font-weight: 400; font-size: 1.3rem; position: relative; top: -12px; }
+    .pn-logo-text-stack p { font-size: 0.95rem; font-weight: 600; color: #4a5568; margin-top: 4px; letter-spacing: 0.05em; }
 
     .pn-dark-navbar { background: var(--pn-dark-bar); color: white; padding: 0.75rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .pn-navbar-inner { max-width: 1200px; margin: 0 auto; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; }
     .pn-nav-links { display: flex; gap: 1.5rem; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
     .pn-nav-links span { cursor: default; opacity: 0.85; transition: opacity 0.2s; }
-    .pn-nav-links span.active { color: var(--pn-gold); opacity: 1; }
+    .pn-nav-links span.active-category { color: var(--pn-gold); opacity: 1; border-bottom: 2px solid var(--pn-gold); padding-bottom: 4px; }
     
     .pn-search-mock { display: flex; align-items: center; }
     .pn-search-mock input { padding: 0.4rem 0.75rem; font-size: 0.8rem; border: 1px solid #4a5568; border-radius: 4px 0 0 4px; outline: none; width: 220px; }
@@ -110,49 +109,45 @@
 </head>
 <body>
 
-  <!-- Top Utilities Strip -->
+  <!-- Top Utility Link Bar -->
   <div class="pn-utility-top">
     <div class="pn-utility-inner">
-      <span>Sign In / Register</span> | <span>Catalog Request</span> | <span>Quick Order</span> | <span>Join PN Email List</span> | <span>Quotes 0</span> 🛒
+      <span>Sign In / Register</span> | <span>Catalog Request</span> | <span>Quick order</span> | <span>Join PN Email List</span> | <span>Quotes 0</span> 🛒
     </div>
   </div>
 
-  <!-- Corporate Branded Header Area Section -->
-  <div class="pn-brand-header">
-    <div class="pn-brand-inner">
-      <div class="pn-logo-box">
-        <!-- Shield and Heart Layout System -->
-        <div class="pn-logo-shield">
-          <div class="pn-logo-heart"></div>
-        </div>
-        <div class="pn-logo-text">
+  <!-- Perfectly Centered Logo Header Area -->
+  <header class="pn-storefront-header">
+    <div class="pn-header-content-area">
+      <div class="pn-centered-logo-wrapper">
+        <div class="pn-logo-shield-element"><div class="pn-logo-heart-node"></div></div>
+        <div class="pn-logo-text-stack">
           <h2>Pocket Nurse<span>®</span></h2>
           <p>Simulation & Education Supplies</p>
         </div>
       </div>
-      <div class="pn-header-tagline">Simulation & Education Design Prototype</div>
     </div>
-  </div>
+  </header>
 
-  <!-- Dark Top Nav Bar Menu (Non-Functional Design Layer) -->
-  <div class="pn-dark-navbar">
+  <!-- Dark Horizontal Storefront Primary Navigation Strip -->
+  <nav class="pn-dark-navbar">
     <div class="pn-navbar-inner">
       <div class="pn-nav-links">
-        <span class="active">Products ▾</span>
-        <span>New Items</span>
-        <span>Clearance</span>
-        <span>Contact Us</span>
-        <span>Customer Testimonials</span>
-        <span>Build A Kit</span>
+        <span class="active-category">PRODUCTS ▾</span>
+        <span>NEW ITEMS</span>
+        <span>CLEARANCE</span>
+        <span>CONTACT US</span>
+        <span>CUSTOMER TESTIMONIALS</span>
+        <span>BUILD A KIT</span>
       </div>
       <div class="pn-search-mock">
         <input type="text" placeholder="Enter Keyword or Item #">
-        <button>🔍</button>
+        <button class="pn-search-icon-btn">🔍</button>
       </div>
     </div>
-  </div>
+  </nav>
 
-  <!-- Main 1200px Content Window Matrix Viewport Wrapper -->
+  <!-- Main 1200px Content Window Grid Wrapper -->
   <div class="pn-main-grid-viewport">
 
     <div class="dashboard-overlay" id="welcome-screen">
@@ -174,7 +169,7 @@
       </div>
     </div>
 
-    <!-- Sidebar Element Layout Window -->
+    <!-- Sidebar Element Window -->
     <div class="sidebar">
       <div class="sidebar-header">
         <h2 id="sidebar-title">SimLab Equipment</h2>
@@ -196,8 +191,8 @@
       <div class="toolbar">
         <div class="room-title" id="active-room-title">Template Workspace</div>
         <div class="stats-panel">
-          <div class="stat-badge">Scale Dims: <span id="footprint-dims">18ft x 11ft</span></div>
-          <div class="stat-badge">Calculated Area: <span id="footprint-area">198 sq ft</span></div>
+          <div class="stat-badge">Scale Dims: <span id="footprint-dims">18ft x 13ft</span></div>
+          <div class="stat-badge">Calculated Area: <span id="footprint-area">234 sq ft</span></div>
         </div>
         <div class="nav-buttons">
           <button class="toolbar-btn change-room-btn" id="change-room">🔄 Change Lab</button>
@@ -211,8 +206,8 @@
 
   </div>
 
-  <!-- PART 3 -->
-    <script>
+  <!-- PART 3  -->
+   <script>
     const sizePresets = {
       small: { width: 560, height: 440, readout: "14ft x 11ft", area: "154 sq ft" },
       medium: { width: 720, height: 520, readout: "18ft x 13ft", area: "234 sq ft" },
@@ -326,7 +321,6 @@
     canvas.addEventListener('drop', (e) => {
       e.preventDefault();
       const rect = canvas.getBoundingClientRect();
-      
       const borderLeft = activeType === 'pharmacy' ? 10 : 0;
       const borderTop = activeType === 'medsurg' ? 10 : 0;
       
@@ -383,7 +377,6 @@
       document.addEventListener('mousemove', (e) => {
         if (!activeMove) return;
         const rect = canvas.getBoundingClientRect();
-        
         const borderLeft = activeType === 'pharmacy' ? 10 : 0;
         const borderTop = activeType === 'medsurg' ? 10 : 0;
         
