@@ -1,5 +1,218 @@
-<script>
-    // Configuration blueprints mapping pixels to realistic feet scaling
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pocket Nurse® SimLab Builder Sandbox</title>
+  
+  <!-- PART 2  -->
+    <style>
+    :root {
+      --pn-navy: #2d3748;       
+      --pn-gold: #dfb119;       
+      --pn-dark-bar: #1a202c;   
+      --pn-bg: #f7fafc;         
+      --pn-border: #cbd5e1;     
+      --grid-size: 40px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Helvetica Neue", Arial, sans-serif; }
+    body { background: #e2e8f0; color: var(--pn-navy); padding-bottom: 50px; }
+
+    .pn-utility-top { background: white; padding: 0.5rem 0; font-size: 0.75rem; text-align: right; color: #4a5568; border-bottom: 1px solid #e2e8f0; }
+    .pn-utility-inner { max-width: 1200px; margin: 0 auto; padding: 0 15px; font-weight: 500; }
+    .pn-utility-inner span { cursor: default; margin: 0 4px; }
+
+    .pn-brand-header { background: white; padding: 1.5rem 0; }
+    .pn-brand-inner { max-width: 1200px; margin: 0 auto; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .pn-logo-box { display: flex; align-items: center; gap: 15px; }
+    .pn-logo-shield { width: 56px; height: 50px; background: var(--pn-gold); border-radius: 6px; position: relative; display: flex; align-items: center; justify-content: center; }
+    .pn-logo-heart { width: 28px; height: 28px; background: white; position: relative; transform: rotate(-45deg); top: -2px; }
+    .pn-logo-heart::before, .pn-logo-heart::after { content: ""; width: 28px; height: 28px; background: white; border-radius: 50%; position: absolute; }
+    .pn-logo-heart::before { top: -14px; left: 0; }
+    .pn-logo-heart::after { top: 0; left: 14px; }
+    
+    .pn-logo-text h2 { font-size: 2.2rem; font-weight: 800; color: var(--pn-navy); letter-spacing: -0.03em; line-height: 1; }
+    .pn-logo-text h2 span { font-weight: 400; font-size: 1.2rem; position: relative; top: -10px; }
+    .pn-logo-text p { font-size: 0.95rem; font-weight: 600; color: #4a5568; margin-top: 2px; letter-spacing: 0.02em; }
+    .pn-header-tagline { font-size: 0.85rem; font-weight: 600; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .pn-dark-navbar { background: var(--pn-dark-bar); color: white; padding: 0.75rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .pn-navbar-inner { max-width: 1200px; margin: 0 auto; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; }
+    .pn-nav-links { display: flex; gap: 1.5rem; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .pn-nav-links span { cursor: default; opacity: 0.85; transition: opacity 0.2s; }
+    .pn-nav-links span.active { color: var(--pn-gold); opacity: 1; }
+    
+    .pn-search-mock { display: flex; align-items: center; }
+    .pn-search-mock input { padding: 0.4rem 0.75rem; font-size: 0.8rem; border: 1px solid #4a5568; border-radius: 4px 0 0 4px; outline: none; width: 220px; }
+    .pn-search-mock button { background: #4a5568; border: none; padding: 0.4rem 0.75rem; color: white; cursor: default; border-radius: 0 4px 4px 0; }
+
+    .pn-main-grid-viewport { max-width: 1200px; margin: 30px auto 0 auto; padding: 0 15px; display: flex; gap: 20px; position: relative; }
+
+    .dashboard-overlay { position: absolute; inset: 0; background: rgba(26, 32, 44, 0.97); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.4s, visibility 0.4s; border-radius: 0.5rem; }
+    .dashboard-overlay.hidden { opacity: 0; visibility: hidden; }
+    
+    .welcome-card { background: white; padding: 3rem; border-radius: 0.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center; max-width: 580px; width: 95%; border-top: 6px solid var(--pn-gold); }
+    .welcome-card h1 { font-size: 1.6rem; color: var(--pn-navy); margin-bottom: 0.5rem; }
+    .welcome-card p { font-size: 0.9rem; color: #718096; margin-bottom: 2rem; }
+    
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .choice-btn { background: var(--pn-bg); border: 2px solid var(--pn-border); border-radius: 0.375rem; padding: 1.75rem 1rem; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+    .choice-btn:hover { border-color: var(--pn-gold); background: #fffdf5; transform: translateY(-2px); }
+    .choice-icon { font-size: 2.75rem; }
+    .choice-btn strong { font-size: 1.05rem; color: var(--pn-navy); }
+    .choice-btn span { font-size: 0.8rem; color: #718096; }
+
+    .sidebar { width: 330px; background: white; border: 1px solid var(--pn-border); border-radius: 0.375rem; display: flex; flex-direction: column; height: 660px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .sidebar-header { padding: 1.25rem; border-bottom: 1px solid var(--pn-border); background: #fffdf5; border-radius: 0.375rem 0.375rem 0 0; border-top: 4px solid var(--pn-gold); }
+    .sidebar-header h2 { font-size: 1.15rem; font-weight: 700; color: var(--pn-navy); margin-bottom: 0.25rem; }
+    .sidebar-header p { font-size: 0.8rem; color: #718096; }
+    
+    .dimension-control { padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--pn-border); background: var(--pn-bg); }
+    .dimension-control label { font-size: 0.75rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.02em; }
+    .dimension-control select { width: 100%; padding: 0.45rem; border: 1px solid var(--pn-border); border-radius: 0.375rem; background: white; font-size: 0.85rem; font-weight: 500; color: var(--pn-navy); outline: none; }
+    
+    .component-list { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.85rem; overflow-y: auto; flex-grow: 1; }
+    .draggable-item { padding: 0.85rem; background: var(--pn-bg); border: 2px dashed var(--pn-border); border-radius: 0.375rem; cursor: grab; display: flex; align-items: center; gap: 0.75rem; transition: all 0.2s; user-select: none; }
+    .draggable-item:hover { border-color: var(--pn-gold); background: #fffdf5; }
+    .item-icon { width: 42px; height: 42px; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid var(--pn-border); }
+
+    .workspace-container { flex-grow: 1; display: flex; flex-direction: column; height: 660px; }
+    .toolbar { height: 60px; background: white; border: 1px solid var(--pn-border); border-radius: 0.375rem; display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .room-title { font-weight: 700; font-size: 0.95rem; color: var(--pn-navy); }
+    
+    .stats-panel { display: flex; gap: 1rem; font-size: 0.8rem; background: #edf2f7; padding: 0.4rem 0.85rem; border-radius: 0.375rem; border: 1px solid var(--pn-border); }
+    .stat-badge { font-weight: 600; color: #4a5568; }
+    .stat-badge span { font-weight: 700; color: #2b6cb0; }
+
+    .nav-buttons { display: flex; gap: 0.5rem; }
+    .toolbar-btn { border: none; padding: 0.45rem 1rem; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.02em; transition: opacity 0.2s; }
+    .change-room-btn { background: #718096; color: white; }
+    .reset-btn { background: #e53e3e; color: white; }
+    .toolbar-btn:hover { opacity: 0.9; }
+
+    .canvas-container { flex-grow: 1; position: relative; overflow: auto; border: 1px solid var(--pn-border); border-radius: 0.375rem; background: #cbd5e0; display: flex; align-items: center; justify-content: center; }
+    .canvas { background: white; border-radius: 0.25rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); position: relative; background-image: linear-gradient(var(--pn-border) 1px, transparent 1px), linear-gradient(90deg, var(--pn-border) 1px, transparent 1px); background-size: var(--grid-size) var(--grid-size); transition: width 0.3s ease, height 0.3s ease; }
+    
+    .canvas.medsurg-theme { border-top: 10px solid #718096; }
+    .canvas.pharmacy-theme { border-left: 10px solid #319795; }
+    .room-accent-zone { position: absolute; background: rgba(0,0,0,0.06); font-size: 0.65rem; font-weight: 700; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.05em; pointer-events: none; opacity: 0.85; text-align: center; border: 1px dashed rgba(0,0,0,0.15); }
+
+    .placed-item { position: absolute; width: calc(var(--grid-size) * 2); height: calc(var(--grid-size) * 2); background: rgba(43, 108, 176, 0.06); border: 2px solid #2b6cb0; border-radius: 0.25rem; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: move; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); user-select: none; }
+    .placed-item:active { cursor: grabbing; }
+    .placed-icon { font-size: 1.5rem; margin-bottom: -4px; }
+    .placed-label { font-size: 0.6rem; font-weight: 700; color: #2b6cb0; text-align: center; max-width: 95%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    .delete-btn { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; background: #e53e3e; color: white; border: none; border-radius: 50%; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+  </style>
+
+</head>
+<body>
+
+  <!-- Top Utilities Strip -->
+  <div class="pn-utility-top">
+    <div class="pn-utility-inner">
+      <span>Sign In / Register</span> | <span>Catalog Request</span> | <span>Quick Order</span> | <span>Join PN Email List</span> | <span>Quotes 0</span> 🛒
+    </div>
+  </div>
+
+  <!-- Corporate Branded Header Area Section -->
+  <div class="pn-brand-header">
+    <div class="pn-brand-inner">
+      <div class="pn-logo-box">
+        <!-- Shield and Heart Layout System -->
+        <div class="pn-logo-shield">
+          <div class="pn-logo-heart"></div>
+        </div>
+        <div class="pn-logo-text">
+          <h2>Pocket Nurse<span>®</span></h2>
+          <p>Simulation & Education Supplies</p>
+        </div>
+      </div>
+      <div class="pn-header-tagline">Simulation & Education Design Prototype</div>
+    </div>
+  </div>
+
+  <!-- Dark Top Nav Bar Menu (Non-Functional Design Layer) -->
+  <div class="pn-dark-navbar">
+    <div class="pn-navbar-inner">
+      <div class="pn-nav-links">
+        <span class="active">Products ▾</span>
+        <span>New Items</span>
+        <span>Clearance</span>
+        <span>Contact Us</span>
+        <span>Customer Testimonials</span>
+        <span>Build A Kit</span>
+      </div>
+      <div class="pn-search-mock">
+        <input type="text" placeholder="Enter Keyword or Item #">
+        <button>🔍</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main 1200px Content Window Matrix Viewport Wrapper -->
+  <div class="pn-main-grid-viewport">
+
+    <div class="dashboard-overlay" id="welcome-screen">
+      <div class="welcome-card">
+        <h1>What simulation Lab would you like to build?</h1>
+        <p>Select a room template category to load dynamic instructional supplies.</p>
+        <div class="options-grid">
+          <button class="choice-btn" onclick="initializeWorkspace('medsurg')">
+            <span class="choice-icon">🛏️</span>
+            <strong>Med-Surg Hospital Room</strong>
+            <span>150 to 500 square feet limits</span>
+          </button>
+          <button class="choice-btn" onclick="initializeWorkspace('pharmacy')">
+            <span class="choice-icon">🧪</span>
+            <strong>Pharmacy Lab</strong>
+            <span>150 to 500 square feet limits</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Element Layout Window -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2 id="sidebar-title">SimLab Equipment</h2>
+        <p id="sidebar-desc">Drag items onto the canvas blueprint</p>
+      </div>
+      <div class="dimension-control">
+        <label for="room-size-select">Baseline Layout Constraint:</label>
+        <select id="room-size-select">
+          <option value="small">Small Consultation Slot (~150 sq ft)</option>
+          <option value="medium" selected>Standard Training Footprint (~315 sq ft)</option>
+          <option value="large">Comprehensive Ward Suite (~480 sq ft)</option>
+        </select>
+      </div>
+      <div class="component-list" id="catalog-list"></div>
+    </div>
+
+    <!-- Workspace Container Element Layout Frame -->
+    <div class="workspace-container">
+      <div class="toolbar">
+        <div class="room-title" id="active-room-title">Template Workspace</div>
+        <div class="stats-panel">
+          <div class="stat-badge">Scale Dims: <span id="footprint-dims">18ft x 11ft</span></div>
+          <div class="stat-badge">Calculated Area: <span id="footprint-area">198 sq ft</span></div>
+        </div>
+        <div class="nav-buttons">
+          <button class="toolbar-btn change-room-btn" id="change-room">🔄 Change Lab</button>
+          <button class="toolbar-btn reset-btn" id="clear-workspace">Clear Grid</button>
+        </div>
+      </div>
+      <div class="canvas-container">
+        <div class="canvas" id="blueprint-canvas"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PART 3 -->
+    <script>
     const sizePresets = {
       small: { width: 560, height: 440, readout: "14ft x 11ft", area: "154 sq ft" },
       medium: { width: 720, height: 520, readout: "18ft x 13ft", area: "234 sq ft" },
@@ -114,7 +327,6 @@
       e.preventDefault();
       const rect = canvas.getBoundingClientRect();
       
-      // Calculate borders to deduct from placement limits
       const borderLeft = activeType === 'pharmacy' ? 10 : 0;
       const borderTop = activeType === 'medsurg' ? 10 : 0;
       
@@ -134,7 +346,8 @@
 
       spawnBlueprintAsset(x, y, currentIcon, currentLabel);
     });
-  function spawnBlueprintAsset(x, y, icon, label) {
+
+    function spawnBlueprintAsset(x, y, icon, label) {
       const assetWrapper = document.createElement('div');
       assetWrapper.className = 'placed-item';
       assetWrapper.style.left = `${x}px`;
@@ -162,7 +375,6 @@
       item.addEventListener('mousedown', (e) => {
         if (e.target.className === 'delete-btn') return;
         activeMove = true;
-        
         startX = e.clientX - item.offsetLeft;
         startY = e.clientY - item.offsetTop;
         item.style.zIndex = 1000;
@@ -172,7 +384,6 @@
         if (!activeMove) return;
         const rect = canvas.getBoundingClientRect();
         
-        // Deduct structural accent border widths from movement container calculations
         const borderLeft = activeType === 'pharmacy' ? 10 : 0;
         const borderTop = activeType === 'medsurg' ? 10 : 0;
         
@@ -185,7 +396,6 @@
         const maxW = rect.width - borderLeft;
         const maxH = rect.height - borderTop;
 
-        // Force item tracking constraints to step cleanly up to the inside walls
         if (newX < 0) newX = 0;
         if (newY < 0) newY = 0;
         if (newX > maxW - item.offsetWidth) {
@@ -215,5 +425,8 @@
       welcomeScreen.classList.remove('hidden');
     });
   </script>
+</body>
+</html>
+
 </body>
 </html>
