@@ -51,28 +51,39 @@ const sizeSelect = document.getElementById('room-size-select');
 const footprintDims = document.getElementById('footprint-dims');
 const footprintArea = document.getElementById('footprint-area');
 
-// Card buttons inside our welcome screen dashboard card
-const chooseMedsurgBtn = document.getElementById('choose-medsurg');
-const choosePharmacyBtn = document.getElementById('choose-pharmacy');
-
 let scene, camera, renderer, floor;
 const spawnedObjects = [];
 let activeType = 'medsurg';
 
-// 3. Application Lifecycle Handlers
+// 3. Application Lifecycle Setup
 function initializeWorkspace(type) {
   activeType = type;
-  welcomeScreen.classList.add('hidden');
+  if (welcomeScreen) {
+    welcomeScreen.classList.add('hidden');
+  }
   init3DSpace();
 }
 
-// Fixed event listeners bound securely to our script module environment nodes
-if(chooseMedsurgBtn) chooseMedsurgBtn.addEventListener('click', () => initializeWorkspace('medsurg'));
-if(choosePharmacyBtn) choosePharmacyBtn.addEventListener('click', () => initializeWorkspace('pharmacy'));
+// Fixed Fail-Safe Click Bridge: Attaches directly to the buttons using their position order
+document.addEventListener('DOMContentLoaded', () => {
+  const choiceButtons = document.querySelectorAll('.choice-btn');
+  if (choiceButtons.length >= 2) {
+    choiceButtons[0].addEventListener('click', () => initializeWorkspace('medsurg'));
+    choiceButtons[1].addEventListener('click', () => initializeWorkspace('pharmacy'));
+  }
+});
+
+// Backup option just in case the DOMContentLoaded state fired early
+const altButtons = document.querySelectorAll('.choice-btn');
+if (altButtons.length >= 2) {
+  altButtons[0].onclick = () => initializeWorkspace('medsurg');
+  altButtons[1].onclick = () => initializeWorkspace('pharmacy');
+}
 
 // 4. Core Three.js Space Initialization Engine
 function init3DSpace() {
   const container = document.getElementById('blueprint-canvas');
+  if (!container) return;
   container.innerHTML = ''; 
 
   scene = new THREE.Scene();
@@ -113,7 +124,9 @@ function animate() {
   if (scene) {
     scene.rotation.y += 0.002;
   }
-  renderer.render(scene, camera);
+  if (renderer && scene && camera) {
+    renderer.render(scene, camera);
+  }
 }
 
 // 6. Sidebar Menu Rendering Engine
@@ -121,12 +134,13 @@ function load3DMenuCatalog() {
   const config = catalogs[activeType];
   const sizeConfig = sizePresets[sizeSelect.value];
   
-  footprintDims.textContent = sizeConfig.readout;
-  footprintArea.textContent = sizeConfig.area;
-  sidebarTitle.textContent = config.title;
-  sidebarDesc.textContent = config.desc;
-  activeRoomTitle.textContent = config.headline;
+  if (footprintDims) footprintDims.textContent = sizeConfig.readout;
+  if (footprintArea) footprintArea.textContent = sizeConfig.area;
+  if (sidebarTitle) sidebarTitle.textContent = config.title;
+  if (sidebarDesc) sidebarDesc.textContent = config.desc;
+  if (activeRoomTitle) activeRoomTitle.textContent = config.headline;
 
+  if (!catalogList) return;
   catalogList.innerHTML = ''; 
   
   const objectColors = [0x2563eb, 0xdfb119, 0x10b981, 0xef4444, 0x8b5cf6];
@@ -151,6 +165,7 @@ function load3DMenuCatalog() {
 }
 
 function spawn3DObject(colorHex) {
+  if (!scene) return;
   const geometry = new THREE.BoxGeometry(1.2, 1.5, 0.8);
   const material = new THREE.MeshStandardMaterial({ color: colorHex });
   const block = new THREE.Mesh(geometry, material);
@@ -164,21 +179,27 @@ function spawn3DObject(colorHex) {
 }
 
 // 7. Core Command Clear/Reset Triggers
-clearBtn.addEventListener('click', () => {
-  if (scene) {
-    spawnedObjects.forEach(obj => scene.remove(obj));
-    spawnedObjects.length = 0;
-  }
-});
+if (clearBtn) {
+  clearBtn.addEventListener('click', () => {
+    if (scene) {
+      spawnedObjects.forEach(obj => scene.remove(obj));
+      spawnedObjects.length = 0;
+    }
+  });
+}
 
-changeRoomBtn.addEventListener('click', () => {
-  welcomeScreen.classList.remove('hidden');
-});
+if (changeRoomBtn) {
+  changeRoomBtn.addEventListener('click', () => {
+    if (welcomeScreen) welcomeScreen.classList.remove('hidden');
+  });
+}
 
-sizeSelect.addEventListener('change', () => {
-  if (scene) {
-    const sizeConfig = sizePresets[sizeSelect.value];
-    footprintDims.textContent = sizeConfig.readout;
-    footprintArea.textContent = sizeConfig.area;
-  }
-});
+if (sizeSelect) {
+  sizeSelect.addEventListener('change', () => {
+    if (scene) {
+      const sizeConfig = sizePresets[sizeSelect.value];
+      if (footprintDims) footprintDims.textContent = sizeConfig.readout;
+      if (footprintArea) footprintArea.textContent = sizeConfig.area;
+    }
+  });
+}
