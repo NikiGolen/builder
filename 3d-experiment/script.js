@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 // 1. Preset Sizing & Catalog Data Sets
 const sizePresets = {
   small: { width: 560, height: 440, readout: "14ft x 11ft", area: "154 sq ft" },
