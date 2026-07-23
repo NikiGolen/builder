@@ -3,161 +3,171 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SimLab Multiverse Builder Sandbox</title>
-  <style>
+  <title>Pocket Nurse Store Prototype Sandbox</title>
+
+   <style>
+    /* Exact style configuration matching your corporate layout metrics */
     :root {
-      --primary: #0284c7;
-      --dark: #0f172a;
-      --light: #f8fafc;
-      --border: #cbd5e1;
+      --pn-navy: #1e293b;       /* Header and nav strip fill color */
+      --pn-blue: #0284c7;       /* Primary highlight and active borders */
+      --pn-bg: #f8fafc;         /* Light product card background fills */
+      --pn-border: #cbd5e1;     /* Standard site division border wire */
       --grid-size: 40px;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
-    body { display: flex; height: 100vh; background: var(--light); color: var(--dark); overflow: hidden; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: #e2e8f0; color: var(--pn-navy); padding-bottom: 40px; }
 
-    /* Welcome / Screen Selection Panel Overlay */
-    .dashboard-overlay { position: fixed; inset: 0; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.4s ease, visibility 0.4s; }
+    /* Mock E-Commerce Top Header Accent to ground the design test */
+    .mock-pn-header { background: white; padding: 1rem 0; border-bottom: 4px solid var(--pn-blue); margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .mock-pn-header-inner { max-width: 1200px; margin: 0 auto; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; }
+    .mock-logo { font-size: 1.5rem; font-weight: 800; color: var(--pn-navy); letter-spacing: -0.02em; }
+    .mock-logo span { color: var(--pn-blue); }
+
+    /* The core 1200px layout matrix that encapsulates your site layout banners */
+    .pn-main-viewport-wrapper { 
+      max-width: 1200px; 
+      margin: 0 auto; 
+      padding: 0 15px; 
+      display: flex; 
+      gap: 20px; 
+      position: relative;
+    }
+
+    /* Selection overlay container locked inside the workspace viewport bounds */
+    .dashboard-overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.96); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.4s, visibility 0.4s; border-radius: 0.5rem; }
     .dashboard-overlay.hidden { opacity: 0; visibility: hidden; }
     
-    .welcome-card { background: white; padding: 3rem; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); text-align: center; max-width: 600px; width: 90%; }
-    .welcome-card h1 { font-size: 1.75rem; color: #1e293b; margin-bottom: 0.5rem; }
-    .welcome-card p { color: #64748b; margin-bottom: 2rem; }
+    .welcome-card { background: white; padding: 3rem; border-radius: 0.75rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center; max-width: 580px; width: 95%; border-top: 6px solid var(--pn-blue); }
+    .welcome-card h1 { font-size: 1.6rem; color: var(--pn-navy); margin-bottom: 0.5rem; }
+    .welcome-card p { font-size: 0.9rem; color: #64748b; margin-bottom: 2rem; }
     
-    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-    .choice-btn { background: var(--light); border: 2px solid var(--border); border-radius: 0.75rem; padding: 2rem 1rem; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
-    .choice-btn:hover { border-color: var(--primary); background: #f0f9ff; transform: translateY(-2px); }
-    .choice-icon { font-size: 3rem; }
-    .choice-btn strong { font-size: 1.1rem; color: #1e293b; }
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .choice-btn { background: var(--pn-bg); border: 2px solid var(--pn-border); border-radius: 0.5rem; padding: 1.75rem 1rem; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+    .choice-btn:hover { border-color: var(--pn-blue); background: #f0f9ff; transform: translateY(-2px); }
+    .choice-icon { font-size: 2.75rem; }
+    .choice-btn strong { font-size: 1.05rem; color: var(--pn-navy); }
     .choice-btn span { font-size: 0.8rem; color: #64748b; }
 
-    /* Main Builder Application Layout Split */
-    .sidebar { width: 340px; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
-    .sidebar-header { padding: 1.5rem; border-bottom: 1px solid var(--border); background: #f0f9ff; }
-    .sidebar-header h2 { font-size: 1.25rem; font-weight: 700; color: #0369a1; margin-bottom: 0.25rem; }
-    .sidebar-header p { font-size: 0.85rem; color: #64748b; }
+    /* Left Drawer: Sized and styled to align with catalog filtering sidebars */
+    .sidebar { width: 330px; background: white; border: 1px solid var(--pn-border); border-radius: 0.5rem; display: flex; flex-direction: column; height: 660px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .sidebar-header { padding: 1.25rem; border-bottom: 1px solid var(--pn-border); background: #f0f9ff; border-radius: 0.5rem 0.5rem 0 0; }
+    .sidebar-header h2 { font-size: 1.15rem; font-weight: 700; color: #0369a1; margin-bottom: 0.25rem; }
+    .sidebar-header p { font-size: 0.8rem; color: #64748b; }
     
-    /* Room Target Size Controls Selector */
-    .dimension-control { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); background: #f8fafc; }
-    .dimension-control label { font-size: 0.8rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.5rem; }
-    .dimension-control select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; outline: none; background: white; font-size: 0.9rem; font-weight: 500; }
+    .dimension-control { padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--pn-border); background: var(--pn-bg); }
+    .dimension-control label { font-size: 0.75rem; font-weight: 700; color: #475569; display: block; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.02em; }
+    .dimension-control select { width: 100%; padding: 0.45rem; border: 1px solid var(--pn-border); border-radius: 0.375rem; background: white; font-size: 0.85rem; font-weight: 500; color: var(--pn-navy); outline: none; }
     
-    .component-list { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; flex-grow: 1; }
-    
-    /* Draggable Catalog Items */
-    .draggable-item { padding: 1rem; background: var(--light); border: 2px dashed var(--border); border-radius: 0.5rem; cursor: grab; display: flex; align-items: center; gap: 1rem; transition: all 0.2s; user-select: none; }
-    .draggable-item:hover { border-color: var(--primary); background: #e0f2fe; }
-    .item-icon { width: 44px; height: 44px; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .component-list { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.85rem; overflow-y: auto; flex-grow: 1; }
+    .draggable-item { padding: 0.85rem; background: var(--pn-bg); border: 2px dashed var(--pn-border); border-radius: 0.375rem; cursor: grab; display: flex; align-items: center; gap: 0.75rem; transition: all 0.2s; user-select: none; }
+    .draggable-item:hover { border-color: var(--pn-blue); background: #e0f2fe; }
+    .item-icon { width: 42px; height: 42px; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid var(--pn-border); }
 
-    /* Canvas Workspace Elements */
-    .workspace-container { flex-grow: 1; display: flex; flex-direction: column; }
-    .toolbar { height: 60px; background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; }
-    .room-title { font-weight: 600; font-size: 1.1rem; color: #334155; }
+    /* Right Worksite Area: Blueprint grid frame metrics */
+    .workspace-container { flex-grow: 1; display: flex; flex-direction: column; height: 660px; }
+    .toolbar { height: 60px; background: white; border: 1px solid var(--pn-border); border-radius: 0.5rem; display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .room-title { font-weight: 700; font-size: 0.95rem; color: var(--pn-navy); }
     
-    /* Dynamic Stats Display Layout */
-    .stats-panel { display: flex; gap: 1.5rem; font-size: 0.85rem; background: #f1f5f9; padding: 0.4rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border); }
-    .stat-badge { font-weight: 500; color: #475569; }
-    .stat-badge span { font-weight: 700; color: var(--primary); }
+    .stats-panel { display: flex; gap: 1rem; font-size: 0.8rem; background: #f1f5f9; padding: 0.4rem 0.85rem; border-radius: 0.375rem; border: 1px solid var(--pn-border); }
+    .stat-badge { font-weight: 600; color: #475569; }
+    .stat-badge span { font-weight: 700; color: var(--pn-blue); }
 
-    .nav-buttons { display: flex; gap: 0.75rem; }
-    .toolbar-btn { border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+    .nav-buttons { display: flex; gap: 0.5rem; }
+    .toolbar-btn { border: none; padding: 0.45rem 1rem; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.02em; transition: opacity 0.2s; }
     .change-room-btn { background: #64748b; color: white; }
     .reset-btn { background: #ef4444; color: white; }
     .toolbar-btn:hover { opacity: 0.9; }
 
-    .canvas-container { flex-grow: 1; position: relative; overflow: auto; padding: 2rem; display: flex; align-items: center; justify-content: center; background: #e2e8f0; }
+    .canvas-container { flex-grow: 1; position: relative; overflow: auto; border: 1px solid var(--pn-border); border-radius: 0.5rem; background: #cbd5e1; display: flex; align-items: center; justify-content: center; }
+    .canvas { background: white; border-radius: 0.25rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); position: relative; background-image: linear-gradient(var(--pn-border) 1px, transparent 1px), linear-gradient(90deg, var(--pn-border) 1px, transparent 1px); background-size: var(--grid-size) var(--grid-size); transition: width 0.3s ease, height 0.3s ease; }
     
-    /* Responsive Canvas Blueprint Target Grid Frame */
-    .canvas { background: white; border-radius: 0.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); position: relative; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: var(--grid-size) var(--grid-size); transition: width 0.3s ease, height 0.3s ease; }
-    
-    /* Theme Boundaries Overrides */
-    .canvas.medsurg-theme { border-top: 12px solid #64748b; }
-    .canvas.pharmacy-theme { border-left: 12px solid #0d9488; }
-    
-    .room-accent-zone { position: absolute; background: rgba(0,0,0,0.05); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; padding: 4px 12px; border-radius: 10px; letter-spacing: 0.05em; pointer-events: none; opacity: 0.8; text-align: center; }
+    .canvas.medsurg-theme { border-top: 10px solid #64748b; }
+    .canvas.pharmacy-theme { border-left: 10px solid #0d9488; }
+    .room-accent-zone { position: absolute; background: rgba(0,0,0,0.06); font-size: 0.65rem; font-weight: 700; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.05em; pointer-events: none; opacity: 0.85; text-align: center; border: 1px dashed rgba(0,0,0,0.15); }
 
-    /* Interactive Assets Spawning */
-    .placed-item { position: absolute; width: calc(var(--grid-size) * 2); height: calc(var(--grid-size) * 2); background: rgba(2, 132, 199, 0.12); border: 2px solid var(--primary); border-radius: 0.375rem; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: move; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); user-select: none; }
+    /* Draggable Item Blueprint Nodes */
+    .placed-item { position: absolute; width: calc(var(--grid-size) * 2); height: calc(var(--grid-size) * 2); background: rgba(2, 132, 199, 0.08); border: 2px solid var(--pn-blue); border-radius: 0.25rem; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: move; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); user-select: none; }
     .placed-item:active { cursor: grabbing; }
-    .placed-icon { font-size: 1.75rem; margin-bottom: -2px; }
-    .placed-label { font-size: 0.65rem; font-weight: 700; color: #0369a1; text-align: center; max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .placed-icon { font-size: 1.5rem; margin-bottom: -4px; }
+    .placed-label { font-size: 0.6rem; font-weight: 700; color: #0369a1; text-align: center; max-width: 95%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     
-    .delete-btn { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: #ef4444; color: white; border: none; border-radius: 50%; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .delete-btn { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; background: #ef4444; color: white; border: none; border-radius: 50%; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
   </style>
+
 </head>
 <body>
 
-  <!-- Screen 1: Dashboard Welcome Form Selector -->
-  <div class="dashboard-overlay" id="welcome-screen">
-    <div class="welcome-card">
-      <h1>What simulation Lab would you like to build?</h1>
-      <p>Select a specialized room tier to load custom instructional supply arrays.</p>
-      
-      <div class="options-grid">
-        <button class="choice-btn" onclick="initializeWorkspace('medsurg')">
-          <span class="choice-icon">🛏️</span>
-          <strong>Med-Surg Hospital Room</strong>
-          <span>Inpatient beds, headwalls, & vitals</span>
-        </button>
-        <button class="choice-btn" onclick="initializeWorkspace('pharmacy')">
-          <span class="choice-icon">🧪</span>
-          <strong>Pharmacy Lab</strong>
-          <span>Compounding hoods, racks, & registers</span>
-        </button>
-      </div>
+  <!-- Mock Header System Bar -->
+  <div class="mock-pn-header">
+    <div class="mock-pn-header-inner">
+      <div class="mock-logo">Pocket <span>Nurse®</span></div>
+      <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">Simulation & Education Design Test</div>
     </div>
   </div>
 
-  <!-- Left Sidebar Container -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <h2 id="sidebar-title">SimLab Equipment</h2>
-      <p id="sidebar-desc">Drag items onto the canvas blueprint</p>
-    </div>
-    
-    <!-- Target Room Dimension Scaler Selector Component -->
-    <div class="dimension-control">
-      <label for="room-size-select">Target Lab Footprint Size:</label>
-      <select id="room-size-select">
-        <option value="small">Small Consultation Slot (approx. 160 sq ft)</option>
-        <option value="medium" selected>Standard Training Footprint (approx. 315 sq ft)</option>
-        <option value="large">Comprehensive Ward Suite (approx. 480 sq ft)</option>
-      </select>
-    </div>
+  <!-- The 1200px Content Window Frame Layout -->
+  <div class="pn-main-viewport-wrapper">
 
-    <div class="component-list" id="catalog-list">
-      <!-- Items dynamically spawned via script depending on room choice -->
-    </div>
-  </div>
-
-  <!-- Workspace & Active Canvas Layout Frame -->
-  <div class="workspace-container">
-    <div class="toolbar">
-      <div class="room-title" id="active-room-title">Template Workspace</div>
-      
-      <!-- Room Blueprint Active Footprint Readout Panel -->
-      <div class="stats-panel">
-        <div class="stat-badge">Dimensions: <span id="footprint-dims">24ft x 13ft</span></div>
-        <div class="stat-badge">Total Area: <span id="footprint-area">312 sq ft</span></div>
-      </div>
-
-      <div class="nav-buttons">
-        <button class="toolbar-btn change-room-btn" id="change-room">🔄 Change Lab Type</button>
-        <button class="toolbar-btn reset-btn" id="clear-workspace">Clear Grid</button>
+    <div class="dashboard-overlay" id="welcome-screen">
+      <div class="welcome-card">
+        <h1>What simulation Lab would you like to build?</h1>
+        <p>Select a room template category to load dynamic instructional supplies.</p>
+        <div class="options-grid">
+          <button class="choice-btn" onclick="initializeWorkspace('medsurg')">
+            <span class="choice-icon">🛏️</span>
+            <strong>Med-Surg Hospital Room</strong>
+            <span>150 to 500 square feet limits</span>
+          </button>
+          <button class="choice-btn" onclick="initializeWorkspace('pharmacy')">
+            <span class="choice-icon">🧪</span>
+            <strong>Pharmacy Lab</strong>
+            <span>150 to 500 square feet limits</span>
+          </button>
+        </div>
       </div>
     </div>
-    
-    <div class="canvas-container">
-      <div class="canvas" id="blueprint-canvas"></div>
-    </div>
-  </div>
 
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2 id="sidebar-title">SimLab Equipment</h2>
+        <p id="sidebar-desc">Drag items onto the canvas blueprint</p>
+      </div>
+      <div class="dimension-control">
+        <label for="room-size-select">Baseline Layout Constraint:</label>
+        <select id="room-size-select">
+          <option value="small">Small Consultation Slot (~150 sq ft)</option>
+          <option value="medium" selected>Standard Training Footprint (~315 sq ft)</option>
+          <option value="large">Comprehensive Ward Suite (~480 sq ft)</option>
+        </select>
+      </div>
+      <div class="component-list" id="catalog-list"></div>
+    </div>
+
+    <div class="workspace-container">
+      <div class="toolbar">
+        <div class="room-title" id="active-room-title">Template Workspace</div>
+        <div class="stats-panel">
+          <div class="stat-badge">Scale Dims: <span id="footprint-dims">18ft x 11ft</span></div>
+          <div class="stat-badge">Calculated Area: <span id="footprint-area">198 sq ft</span></div>
+        </div>
+        <div class="nav-buttons">
+          <button class="toolbar-btn change-room-btn" id="change-room">🔄 Change Lab</button>
+          <button class="toolbar-btn reset-btn" id="clear-workspace">Clear Grid</button>
+        </div>
+      </div>
+      <div class="canvas-container">
+        <div class="canvas" id="blueprint-canvas"></div>
+      </div>
+    </div>
+
+  </div>
 <script>
     // Configuration blueprints mapping pixels to realistic feet scaling
     const sizePresets = {
-      small: { width: 480, height: 360, readout: "12ft x 9ft", area: "108 sq ft" },
-      medium: { width: 720, height: 440, readout: "18ft x 11ft", area: "198 sq ft" },
-      large: { width: 840, height: 560, readout: "21ft x 14ft", area: "294 sq ft" }
+      small: { width: 560, height: 440, readout: "14ft x 11ft", area: "154 sq ft" },
+      medium: { width: 720, height: 520, readout: "18ft x 13ft", area: "234 sq ft" },
+      large: { width: 880, height: 600, readout: "22ft x 15ft", area: "330 sq ft" }
     };
 
     const catalogs = {
@@ -218,13 +228,11 @@
       const config = catalogs[activeType];
       const sizeConfig = sizePresets[sizeSelect.value];
       
-      // Update canvas footprint dimensions
       canvas.style.width = `${sizeConfig.width}px`;
       canvas.style.height = `${sizeConfig.height}px`;
       footprintDims.textContent = sizeConfig.readout;
       footprintArea.textContent = sizeConfig.area;
 
-      // Clean canvas inner content while maintaining structure
       canvas.innerHTML = '';
       canvas.className = 'canvas ' + config.themeClass;
       catalogList.innerHTML = '';
@@ -233,14 +241,12 @@
       sidebarDesc.textContent = config.desc;
       activeRoomTitle.textContent = config.headline;
 
-      // Mount physical wall accents inside the resized layout bounds
       const zone = document.createElement('div');
       zone.className = 'room-accent-zone';
       zone.style.cssText = config.accentZone.style;
       zone.textContent = config.accentZone.text;
       canvas.appendChild(zone);
 
-      // Generate customized source drag cards
       config.items.forEach(item => {
         const itemCard = document.createElement('div');
         itemCard.className = 'draggable-item';
@@ -265,9 +271,7 @@
       });
     }
 
-    // Process dropdown change triggers dynamically
     sizeSelect.addEventListener('change', updateCanvasDimensions);
-
     canvas.addEventListener('dragover', (e) => e.preventDefault());
 
     canvas.addEventListener('drop', (e) => {
@@ -354,5 +358,6 @@
       welcomeScreen.classList.remove('hidden');
     });
   </script>
+
 </body>
 </html>
