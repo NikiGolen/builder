@@ -51,7 +51,7 @@ const footprintArea = document.getElementById('footprint-area');
 
 let scene, camera, renderer, floor, gridHelper, controls;
 const spawnedObjects = [];
-let wallsData = {}; // Stores wall meshes with their directional orientation
+let wallsData = {};
 let activeType = 'medsurg';
 
 // Interaction State Properties
@@ -129,7 +129,7 @@ function init3DSpace() {
   load3DMenuCatalog();
 }
 
-// 5. Drag-and-Drop Raycasting Module Logic
+// 5. Drag-and-Drop Raycasting Module Logic (Fixed to test all spawned items)
 function setupInteractionEvents(container) {
   container.addEventListener('pointerdown', (e) => {
     const bounds = container.getBoundingClientRect();
@@ -137,10 +137,15 @@ function setupInteractionEvents(container) {
     mouseVector.y = -((e.clientY - bounds.top) / container.clientHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouseVector, camera);
-    const hits = raycaster.intersectObjects(spawnedObjects);
+    const hits = raycaster.intersectObjects(spawnedObjects, true);
 
     if (hits.length > 0) {
-      selectedMesh = hits[0].object;
+      // Traverse up to find the root mesh object stored in spawnedObjects
+      let obj = hits[0].object;
+      while (obj.parent && obj.parent !== scene && !spawnedObjects.includes(obj)) {
+        obj = obj.parent;
+      }
+      selectedMesh = spawnedObjects.includes(obj) ? obj : hits[0].object;
       controls.enabled = false;
     }
   });
@@ -175,7 +180,6 @@ function setupInteractionEvents(container) {
 
 // 6. Sizing & Dynamic Sims-Style Wall Fading Modifiers
 function updateRoomWalls() {
-  // Clear existing walls from scene
   Object.values(wallsData).forEach(data => scene.remove(data.mesh));
   wallsData = {};
 
@@ -185,7 +189,6 @@ function updateRoomWalls() {
   const wallHeight = 1.2; 
   const wallThickness = 0.2;
 
-  // Helper to create a wall material supporting dynamic transparency
   const createWallMaterial = () => new THREE.MeshStandardMaterial({ 
     color: 0xf1f5f9, 
     roughness: 0.9,
@@ -196,30 +199,26 @@ function updateRoomWalls() {
 
   // Back Wall (-Z)
   const backGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, wallHeight, wallThickness);
-  const backMat = createWallMaterial();
-  const backWall = new THREE.Mesh(backGeo, backMat);
+  const backWall = new THREE.Mesh(backGeo, createWallMaterial());
   backWall.position.set(0, wallHeight / 2, -halfZ - (wallThickness / 2));
   scene.add(backWall);
   wallsData.back = { mesh: backWall, normal: new THREE.Vector3(0, 0, -1) };
 
   // Front Wall (+Z)
-  const frontMat = createWallMaterial();
-  const frontWall = new THREE.Mesh(backGeo, frontMat);
+  const frontWall = new THREE.Mesh(backGeo, createWallMaterial());
   frontWall.position.set(0, wallHeight / 2, halfZ + (wallThickness / 2));
   scene.add(frontWall);
   wallsData.front = { mesh: frontWall, normal: new THREE.Vector3(0, 0, 1) };
 
   // Left Wall (-X)
   const sideGeo = new THREE.BoxGeometry(wallThickness, wallHeight, sizeConfig.floorScale.z);
-  const leftMat = createWallMaterial();
-  const leftWall = new THREE.Mesh(sideGeo, leftMat);
+  const leftWall = new THREE.Mesh(sideGeo, createWallMaterial());
   leftWall.position.set(-halfX - (wallThickness / 2), wallHeight / 2, 0);
   scene.add(leftWall);
   wallsData.left = { mesh: leftWall, normal: new THREE.Vector3(-1, 0, 0) };
 
   // Right Wall (+X)
-  const rightMat = createWallMaterial();
-  const rightWall = new THREE.Mesh(sideGeo, rightMat);
+  const rightWall = new THREE.Mesh(sideGeo, createWallMaterial());
   rightWall.position.set(halfX + (wallThickness / 2), wallHeight / 2, 0);
   scene.add(rightWall);
   wallsData.right = { mesh: rightWall, normal: new THREE.Vector3(1, 0, 0) };
@@ -251,22 +250,14 @@ function animate() {
   requestAnimationFrame(animate);
   if (controls) controls.update();
 
-  // Dynamic Sims-Style Camera Wall Culling
   if (camera && Object.keys(wallsData).length > 0) {
-    // Vector pointing from room center (0,0,0) to camera
     const cameraDir = new THREE.Vector3().subVectors(camera.position, new THREE.Vector3(0, 0, 0)).normalize();
 
     Object.values(wallsData).forEach(data => {
-      // Dot product checks if camera is looking at this wall's outer face
       const dot = cameraDir.dot(data.normal);
-      
-      // If the camera is on the same side as the wall, fade it out so it doesn't block view
       const targetOpacity = dot > 0.15 ? 0.12 : 1.0; 
       
-      // Smoothly transition opacity
       data.mesh.material.opacity += (targetOpacity - data.mesh.material.opacity) * 0.1;
-      
-      // Completely hide shadow/raycasts if nearly invisible
       data.mesh.material.transparent = data.mesh.material.opacity < 0.95;
     });
   }
