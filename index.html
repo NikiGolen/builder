@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Lab Builder Sandbox</title>
-  <style>
+  <title>SimLab Multiverse Builder Sandbox</title>
+  
+ <style>
     :root {
-      --primary: #2563eb;
+      --primary: #0284c7;
       --dark: #0f172a;
       --light: #f8fafc;
       --border: #cbd5e1;
@@ -16,152 +17,271 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
     body { display: flex; height: 100vh; background: var(--light); color: var(--dark); overflow: hidden; }
 
-    /* Left Sidebar: Components Menu */
-    .sidebar { width: 320px; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
-    .sidebar-header { padding: 1.5rem; border-bottom: 1px solid var(--border); }
-    .sidebar-header h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.25rem; }
+    /* 1. Welcome / Screen Selection Panel Overlay */
+    .dashboard-overlay { position: fixed; inset: 0; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.4s ease, visibility 0.4s; }
+    .dashboard-overlay.hidden { opacity: 0; visibility: hidden; }
+    
+    .welcome-card { background: white; padding: 3rem; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); text-align: center; max-width: 600px; width: 90%; }
+    .welcome-card h1 { font-size: 2rem; color: #1e293b; margin-bottom: 0.5rem; }
+    .welcome-card p { color: #64748b; margin-bottom: 2rem; }
+    
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .choice-btn { background: var(--light); border: 2px solid var(--border); border-radius: 0.75rem; padding: 2rem 1rem; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+    .choice-btn:hover { border-color: var(--primary); background: #f0f9ff; transform: translateY(-2px); }
+    .choice-icon { font-size: 3rem; }
+    .choice-btn strong { font-size: 1.1rem; color: #1e293b; }
+    .choice-btn span { font-size: 0.8rem; color: #64748b; }
+
+    /* 2. Main Builder Application Layout Split */
+    .sidebar { width: 340px; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
+    .sidebar-header { padding: 1.5rem; border-bottom: 1px solid var(--border); background: #f0f9ff; }
+    .sidebar-header h2 { font-size: 1.25rem; font-weight: 700; color: #0369a1; margin-bottom: 0.25rem; }
     .sidebar-header p { font-size: 0.85rem; color: #64748b; }
     .component-list { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; flex-grow: 1; }
     
-    /* Draggable Item Styles */
+    /* Draggable Catalog Items */
     .draggable-item { padding: 1rem; background: var(--light); border: 2px dashed var(--border); border-radius: 0.5rem; cursor: grab; display: flex; align-items: center; gap: 1rem; transition: all 0.2s; user-select: none; }
-    .draggable-item:hover { border-color: var(--primary); background: #eff6ff; }
-    .item-icon { width: 40px; height: 40px; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .draggable-item:hover { border-color: var(--primary); background: #e0f2fe; }
+    .item-icon { width: 44px; height: 44px; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 
-    /* Right Side: Visual Canvas Workspace */
+    /* Canvas Workspace Elements */
+    .workspace-container { flex-grow: 1; display: flex; flex-direction: column; }
+    .toolbar { height: 60px; background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; }
+    .room-title { font-weight: 600; font-size: 1.1rem; color: #334155; }
+    
+    .nav-buttons { display: flex; gap: 0.75rem; }
+    .toolbar-btn { border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+    .change-room-btn { background: #64748b; color: white; }
+    .reset-btn { background: #ef4444; color: white; }
+    .toolbar-btn:hover { opacity: 0.9; }
+
     .canvas-container { flex-grow: 1; position: relative; overflow: auto; padding: 2rem; display: flex; align-items: center; justify-content: center; background: #e2e8f0; }
-    .canvas { width: 800px; height: 600px; background: white; border-radius: 0.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); position: relative; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: var(--grid-size) var(--grid-size); }
+    
+    /* Canvas Structural Blueprint Background Grid */
+    .canvas { width: 840px; height: 600px; background: white; border-radius: 0.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); position: relative; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: var(--grid-size) var(--grid-size); }
+    
+    /* Dynamic Room Overlay Accent Overrides */
+    .canvas.medsurg-theme { border-top: 12px solid #64748b; }
+    .canvas.pharmacy-theme { border-left: 12px solid #0d9488; }
+    
+    .room-accent-zone { position: absolute; background: rgba(0,0,0,0.05); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; padding: 4px 12px; border-radius: 10px; letter-spacing: 0.05em; pointer-events: none; opacity: 0.8; text-align: center; }
 
-    /* Placed Item Styles on Canvas */
-    .placed-item { position: absolute; width: calc(var(--grid-size) * 2); height: calc(var(--grid-size) * 2); background: rgba(37, 99, 235, 0.15); border: 2px solid var(--primary); border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; font-size: 2rem; cursor: move; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); user-select: none; }
+    /* Interactive Assets Spawning */
+    .placed-item { position: absolute; width: calc(var(--grid-size) * 2); height: calc(var(--grid-size) * 2); background: rgba(2, 132, 199, 0.12); border: 2px solid var(--primary); border-radius: 0.375rem; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: move; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); user-select: none; }
     .placed-item:active { cursor: grabbing; }
+    .placed-icon { font-size: 1.75rem; margin-bottom: -2px; }
+    .placed-label { font-size: 0.65rem; font-weight: 700; color: #0369a1; text-align: center; max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
     .delete-btn { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: #ef4444; color: white; border: none; border-radius: 50%; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
   </style>
+
 </head>
 <body>
 
-  <!-- Sidebar Component Menu -->
+  <!-- Screen 1: Dashboard Welcome Form Selector -->
+  <div class="dashboard-overlay" id="welcome-screen">
+    <div class="welcome-card">
+      <h1>What simulation Lab would you like to build?</h1>
+      <p>Select a specialized room tier to load custom instructional supply arrays.</p>
+      
+      <div class="options-grid">
+        <button class="choice-btn" onclick="initializeWorkspace('medsurg')">
+          <span class="choice-icon">🛏️</span>
+          <strong>Med-Surg Hospital Room</strong>
+          <span>Inpatient beds, headwalls, & vitals</span>
+        </button>
+        <button class="choice-btn" onclick="initializeWorkspace('pharmacy')">
+          <span class="choice-icon">🧪</span>
+          <strong>Pharmacy Lab</strong>
+          <span>Compounding hoods, racks, & registers</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Left Sidebar Container -->
   <div class="sidebar">
     <div class="sidebar-header">
-      <h2>Simulation Equipment</h2>
-      <p>Drag items onto the blueprint canvas</p>
+      <h2 id="sidebar-title">SimLab Equipment</h2>
+      <p id="sidebar-desc">Drag items onto the canvas blueprint</p>
     </div>
-    <div class="component-list">
-      <div class="draggable-item" draggable="true" data-type="manikin" data-icon="🧍">
-        <div class="item-icon" style="background: #dbeafe;">🧍</div>
-        <div>
-          <strong>Patient Manikin</strong>
-          <p style="font-size: 0.75rem; color: #64748b;">High-Fidelity Trainer</p>
-        </div>
-      </div>
-      <div class="draggable-item" draggable="true" data-type="bed" data-icon="🛏️">
-        <div class="item-icon" style="background: #fef08a;">🛏️</div>
-        <div>
-          <strong>Hospital Bed</strong>
-          <p style="font-size: 0.75rem; color: #64748b;">Adjustable Side Rails</p>
-        </div>
-      </div>
-      <div class="draggable-item" draggable="true" data-type="monitor" data-icon="🖥️">
-        <div class="item-icon" style="background: #bbf7d0;">🖥️</div>
-        <div>
-          <strong>Vital Signs Monitor</strong>
-          <p style="font-size: 0.75rem; color: #64748b;">Wall-mount screen</p>
-        </div>
-      </div>
+    <div class="component-list" id="catalog-list">
+      <!-- Items dynamically spawned via script depending on room choice -->
     </div>
   </div>
 
-  <!-- Canvas Workspace -->
-  <div class="canvas-container">
-    <div class="canvas" id="blueprint-canvas"></div>
+  <!-- Workspace & Active Canvas -->
+  <div class="workspace-container">
+    <div class="toolbar">
+      <div class="room-title" id="active-room-title">Template Workspace</div>
+      <div class="nav-buttons">
+        <button class="toolbar-btn change-room-btn" id="change-room">🔄 Change Lab Type</button>
+        <button class="toolbar-btn reset-btn" id="clear-workspace">Clear Grid</button>
+      </div>
+    </div>
+    
+    <div class="canvas-container">
+      <div class="canvas" id="blueprint-canvas"></div>
+    </div>
   </div>
 
-  <script>
+<script>
+    // Distinct catalog models split by simulation category
+    const catalogs = {
+      medsurg: {
+        title: "Med-Surg Room Builder",
+        desc: "Configure a standard clinical training slot",
+        headline: "Template Workspace: Medical-Surgical Ward Simulation",
+        themeClass: "medsurg-theme",
+        accentZone: { text: "Simulated Overbed Headwall Zone (Oxygen / Vacuum)", style: "top: 6px; left: 50%; transform: translateX(-50%); background: #475569; color: white;" },
+        items: [
+          { label: "Patient Bed", icon: "🛏️", sub: "Multi-position electric model", bg: "#e0f2fe" },
+          { label: "Adult Manikin", icon: "🧍", sub: "High-Fidelity Patient Simulator", bg: "#f1f5f9" },
+          { label: "IV Pump", icon: "⚗️", sub: "Dual-line medication pole", bg: "#dcfce7" },
+          { label: "Overbed Table", icon: "🪵", sub: "Height-adjustable tray", bg: "#fef3c7" },
+          { label: "Bio-Waste", icon: "🟥", sub: "Regulated wall sharp box", bg: "#fee2e2" }
+        ]
+      },
+      pharmacy: {
+        title: "Pharmacy Lab Builder",
+        desc: "Configure instructional compounding spaces",
+        headline: "Template Workspace: Institutional Pharmacy Simulation",
+        themeClass: "pharmacy-theme",
+        accentZone: { text: "Sterile Cleanroom Compounding Area (Aseptic)", style: "top: 50%; left: 6px; transform: translateY(-50%) rotate(-90deg); background: #0f766e; color: white;" },
+        items: [
+          { label: "Laminar Hood", icon: "🌬️", sub: "Sterile compounding workbench", bg: "#ccfbf1" },
+          { label: "Medication Cart", icon: "🛒", sub: "Locking rolling unit dose cart", bg: "#f1f5f9" },
+          { label: "Supply Shelving", icon: "🗄️", sub: "Heavy-duty bulk storage rack", bg: "#f5f5f4" },
+          { label: "POS Register", icon: "💻", sub: "Outpatient retail checkout terminal", bg: "#e0f2fe" },
+          { label: "Pill Counter", icon: "🔢", sub: "Digital automatic counting tray", bg: "#fef9c3" }
+        ]
+      }
+    };
+
+    const welcomeScreen = document.getElementById('welcome-screen');
     const canvas = document.getElementById('blueprint-canvas');
-    const draggableItems = document.querySelectorAll('.draggable-item');
+    const catalogList = document.getElementById('catalog-list');
+    const sidebarTitle = document.getElementById('sidebar-title');
+    const sidebarDesc = document.getElementById('sidebar-desc');
+    const activeRoomTitle = document.getElementById('active-room-title');
+    const clearBtn = document.getElementById('clear-workspace');
+    const changeRoomBtn = document.getElementById('change-room');
+    
     const GRID_SIZE = 40;
-    let draggedType = '';
-    let draggedIcon = '';
+    let currentLabel = '';
+    let currentIcon = '';
 
-    // Handle dragging from sidebar
-    draggableItems.forEach(item => {
-      item.addEventListener('dragstart', (e) => {
-        draggedType = item.getAttribute('data-type');
-        draggedIcon = item.getAttribute('data-icon');
+    // Engine to render correct room data models
+    function initializeWorkspace(type) {
+      const config = catalogs[type];
+      
+      // Clean previous configurations
+      canvas.innerHTML = '';
+      canvas.className = 'canvas ' + config.themeClass;
+      catalogList.innerHTML = '';
+
+      // Update static header content fields
+      sidebarTitle.textContent = config.title;
+      sidebarDesc.textContent = config.desc;
+      activeRoomTitle.textContent = config.headline;
+
+      // Mount physical wall accents inside visual layout
+      const zone = document.createElement('div');
+      zone.className = 'room-accent-zone';
+      zone.style.cssText = config.accentZone.style;
+      zone.textContent = config.accentZone.text;
+      canvas.appendChild(zone);
+
+      // Generate customized source drag cards
+      config.items.forEach(item => {
+        const itemCard = document.createElement('div');
+        itemCard.className = 'draggable-item';
+        itemCard.setAttribute('draggable', 'true');
+        itemCard.setAttribute('data-label', item.label);
+        itemCard.setAttribute('data-icon', item.icon);
+        
+        itemCard.innerHTML = `
+          <div class="item-icon" style="background: ${item.bg};">${item.icon}</div>
+          <div>
+            <strong>${item.label}</strong>
+            <p style="font-size: 0.75rem; color: #64748b;">${item.sub}</p>
+          </div>
+        `;
+
+        itemCard.addEventListener('dragstart', () => {
+          currentLabel = itemCard.getAttribute('data-label');
+          currentIcon = itemCard.getAttribute('data-icon');
+        });
+
+        catalogList.appendChild(itemCard);
       });
-    });
 
-    canvas.addEventListener('dragover', (e) => {
-      e.preventDefault(); // Required to allow dropping
-    });
+      // Clear layout transition view state masks
+      welcomeScreen.classList.add('hidden');
+    }
+
+    // Drag over standard processing hooks
+    canvas.addEventListener('dragover', (e) => e.preventDefault());
 
     canvas.addEventListener('drop', (e) => {
       e.preventDefault();
-      
-      // Calculate drop position relative to the canvas
       const rect = canvas.getBoundingClientRect();
       let x = e.clientX - rect.left;
       let y = e.clientY - rect.top;
 
-      // Snap coordinates to the visual grid lines
       x = Math.floor(x / GRID_SIZE) * GRID_SIZE;
       y = Math.floor(y / GRID_SIZE) * GRID_SIZE;
 
-      // Keep items inside boundary limits
       if (x < 0) x = 0;
       if (y < 0) y = 0;
       if (x > rect.width - (GRID_SIZE * 2)) x = rect.width - (GRID_SIZE * 2);
       if (y > rect.height - (GRID_SIZE * 2)) y = rect.height - (GRID_SIZE * 2);
 
-      createNewCanvasItem(x, y, draggedIcon);
+      spawnBlueprintAsset(x, y, currentIcon, currentLabel);
     });
 
-    function createNewCanvasItem(x, y, icon) {
-      const item = document.createElement('div');
-      item.className = 'placed-item';
-      item.style.left = `${x}px`;
-      item.style.top = `${y}px`;
-      item.textContent = icon;
+    function spawnBlueprintAsset(x, y, icon, label) {
+      const assetWrapper = document.createElement('div');
+      assetWrapper.className = 'placed-item';
+      assetWrapper.style.left = `${x}px`;
+      assetWrapper.style.top = `${y}px`;
 
-      // Create a built-in delete button for easy removal
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.textContent = '×';
-      deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Stop event from triggering canvas mechanics
-        item.remove();
+      assetWrapper.innerHTML = `
+        <span class="placed-icon">${icon}</span>
+        <span class="placed-label">${label}</span>
+        <button class="delete-btn">×</button>
+      `;
+
+      assetWrapper.querySelector('.delete-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        assetWrapper.remove();
       });
 
-      item.appendChild(deleteBtn);
-      makeCanvasItemDraggable(item);
-      canvas.appendChild(item);
+      bindAssetDraggability(assetWrapper);
+      canvas.appendChild(assetWrapper);
     }
 
-    // Allow dragging items already placed on the canvas
-    function makeCanvasItemDraggable(item) {
-      let isDragging = false;
+    function bindAssetDraggability(item) {
+      let activeMove = false;
       let startX, startY;
 
       item.addEventListener('mousedown', (e) => {
         if (e.target.className === 'delete-btn') return;
-        isDragging = true;
+        activeMove = true;
         startX = e.clientX - item.offsetLeft;
         startY = e.clientY - item.offsetTop;
-        item.style.zIndex = 1000; // Bring to front while moving
+        item.style.zIndex = 1000;
       });
 
       document.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        
+        if (!activeMove) return;
         const rect = canvas.getBoundingClientRect();
         let newX = e.clientX - startX;
         let newY = e.clientY - startY;
 
-        // Snap to grid dynamically while moving
         newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
         newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
 
-        // Boundary constraints
         if (newX < 0) newX = 0;
         if (newY < 0) newY = 0;
         if (newX > rect.width - item.offsetWidth) newX = rect.width - item.offsetWidth;
@@ -172,12 +292,21 @@
       });
 
       document.addEventListener('mouseup', () => {
-        if (isDragging) {
-          isDragging = false;
-          item.style.zIndex = ''; // Reset stack order
+        if (activeMove) {
+          activeMove = false;
+          item.style.zIndex = '';
         }
       });
     }
+
+    // Canvas management tracking buttons
+    clearBtn.addEventListener('click', () => {
+      canvas.querySelectorAll('.placed-item').forEach(item => item.remove());
+    });
+
+    changeRoomBtn.addEventListener('click', () => {
+      welcomeScreen.classList.remove('hidden');
+    });
   </script>
 </body>
 </html>
