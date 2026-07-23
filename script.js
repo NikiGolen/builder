@@ -1,0 +1,214 @@
+// 1. Preset Sizing & Catalog Data Sets
+const sizePresets = {
+  small: { width: 560, height: 440, readout: "14ft x 11ft", area: "154 sq ft" },
+  medium: { width: 720, height: 520, readout: "18ft x 13ft", area: "234 sq ft" },
+  large: { width: 880, height: 600, readout: "22ft x 15ft", area: "330 sq ft" }
+};
+
+const catalogs = {
+  medsurg: {
+    title: "Med-Surg Room Builder",
+    desc: "Configure a standard clinical training slot",
+    headline: "Template Workspace: Medical-Surgical Ward Simulation",
+    themeClass: "medsurg-theme",
+    accentZone: { text: "Simulated Overbed Headwall Zone (Oxygen / Vacuum)", style: "top: 6px; left: 50%; transform: translateX(-50%); background: #475569; color: white;" },
+    items: [
+      { label: "Patient Bed", icon: "🛏️", sub: "Multi-position electric model", bg: "#e0f2fe" },
+      { label: "Adult Manikin", icon: "🧍", sub: "High-Fidelity Patient Simulator", bg: "#f1f5f9" },
+      { label: "IV Pump", icon: "⚗️", sub: "Dual-line medication pole", bg: "#dcfce7" },
+      { label: "Overbed Table", icon: "🪵", sub: "Height-adjustable tray", bg: "#fef3c7" },
+      { label: "Bio-Waste", icon: "🟥", sub: "Regulated wall sharp box", bg: "#fee2e2" }
+    ]
+  },
+  pharmacy: {
+    title: "Pharmacy Lab Builder",
+    desc: "Configure instructional compounding spaces",
+    headline: "Template Workspace: Institutional Pharmacy Simulation",
+    themeClass: "pharmacy-theme",
+    accentZone: { text: "Sterile Cleanroom Compounding Area (Aseptic)", style: "top: 50%; left: 6px; transform: translateY(-50%) rotate(-90deg); background: #0f766e; color: white;" },
+    items: [
+      { label: "Laminar Hood", icon: "🌬️", sub: "Sterile compounding workbench", bg: "#ccfbf1" },
+      { label: "Medication Cart", icon: "🛒", sub: "Locking rolling unit dose cart", bg: "#f1f5f9" },
+      { label: "Supply Shelving", icon: "🗄️", sub: "Heavy-duty bulk storage rack", bg: "#f5f5f4" },
+      { label: "POS Register", icon: "💻", sub: "Outpatient retail checkout terminal", bg: "#e0f2fe" },
+      { label: "Pill Counter", icon: "🔢", sub: "Digital automatic counting tray", bg: "#fef9c3" }
+    ]
+  }
+};
+
+// 2. DOM Node Core Hooks
+const welcomeScreen = document.getElementById('welcome-screen');
+const canvas = document.getElementById('blueprint-canvas');
+const catalogList = document.getElementById('catalog-list');
+const sidebarTitle = document.getElementById('sidebar-title');
+const sidebarDesc = document.getElementById('sidebar-desc');
+const activeRoomTitle = document.getElementById('active-room-title');
+const clearBtn = document.getElementById('clear-workspace');
+const changeRoomBtn = document.getElementById('change-room');
+const sizeSelect = document.getElementById('room-size-select');
+const footprintDims = document.getElementById('footprint-dims');
+const footprintArea = document.getElementById('footprint-area');
+
+const GRID_SIZE = 40;
+let currentLabel = '';
+let currentIcon = '';
+let activeType = 'medsurg';
+
+// 3. Application Lifecycle Handlers
+function initializeWorkspace(type) {
+  activeType = type;
+  updateCanvasDimensions();
+  welcomeScreen.classList.add('hidden');
+}
+
+function updateCanvasDimensions() {
+  const config = catalogs[activeType];
+  const sizeConfig = sizePresets[sizeSelect.value];
+  
+  canvas.style.width = `${sizeConfig.width}px`;
+  canvas.style.height = `${sizeConfig.height}px`;
+  footprintDims.textContent = sizeConfig.readout;
+  footprintArea.textContent = sizeConfig.area;
+
+  canvas.innerHTML = '';
+  canvas.className = 'canvas ' + config.themeClass;
+  catalogList.innerHTML = '';
+
+  sidebarTitle.textContent = config.title;
+  sidebarDesc.textContent = config.desc;
+  activeRoomTitle.textContent = config.headline;
+
+  const zone = document.createElement('div');
+  zone.className = 'room-accent-zone';
+  zone.style.cssText = config.accentZone.style;
+  zone.textContent = config.accentZone.text;
+  canvas.appendChild(zone);
+
+  config.items.forEach(item => {
+    const itemCard = document.createElement('div');
+    itemCard.className = 'draggable-item';
+    itemCard.setAttribute('draggable', 'true');
+    itemCard.setAttribute('data-label', item.label);
+    itemCard.setAttribute('data-icon', item.icon);
+    
+    itemCard.innerHTML = `
+      <div class="item-icon" style="background: ${item.bg};">${item.icon}</div>
+      <div>
+        <strong>${item.label}</strong>
+        <p style="font-size: 0.75rem; color: #64748b;">${item.sub}</p>
+      </div>
+    `;
+
+    itemCard.addEventListener('dragstart', () => {
+      currentLabel = itemCard.getAttribute('data-label');
+      currentIcon = itemCard.getAttribute('data-icon');
+    });
+
+    catalogList.appendChild(itemCard);
+  });
+}
+
+// 4. Drag & Drop Event Hooks
+sizeSelect.addEventListener('change', updateCanvasDimensions);
+canvas.addEventListener('dragover', (e) => e.preventDefault());
+
+canvas.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const borderLeft = activeType === 'pharmacy' ? 10 : 0;
+  const borderTop = activeType === 'medsurg' ? 10 : 0;
+  
+  let x = e.clientX - rect.left - borderLeft;
+  let y = e.clientY - rect.top - borderTop;
+
+  x = Math.floor(x / GRID_SIZE) * GRID_SIZE;
+  y = Math.floor(y / GRID_SIZE) * GRID_SIZE;
+
+  const maxW = rect.width - borderLeft;
+  const maxH = rect.height - borderTop;
+
+  if (x < 0) x = 0;
+  if (y < 0) y = 0;
+  if (x > maxW - (GRID_SIZE * 2)) x = Math.floor((maxW - (GRID_SIZE * 2)) / GRID_SIZE) * GRID_SIZE;
+  if (y > maxH - (GRID_SIZE * 2)) y = Math.floor((maxH - (GRID_SIZE * 2)) / GRID_SIZE) * GRID_SIZE;
+
+  spawnBlueprintAsset(x, y, currentIcon, currentLabel);
+});
+
+function spawnBlueprintAsset(x, y, icon, label) {
+  const assetWrapper = document.createElement('div');
+  assetWrapper.className = 'placed-item';
+  assetWrapper.style.left = `${x}px`;
+  assetWrapper.style.top = `${y}px`;
+
+  assetWrapper.innerHTML = `
+    <span class="placed-icon">${icon}</span>
+    <span class="placed-label">${label}</span>
+    <button class="delete-btn">×</button>
+  `;
+
+  assetWrapper.querySelector('.delete-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    assetWrapper.remove();
+  });
+
+  bindAssetDraggability(assetWrapper);
+  canvas.appendChild(assetWrapper);
+}
+
+function bindAssetDraggability(item) {
+  let activeMove = false;
+  let startX, startY;
+
+  item.addEventListener('mousedown', (e) => {
+    if (e.target.className === 'delete-btn') return;
+    activeMove = true;
+    startX = e.clientX - item.offsetLeft;
+    startY = e.clientY - item.offsetTop;
+    item.style.zIndex = 1000;
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!activeMove) return;
+    const rect = canvas.getBoundingClientRect();
+    const borderLeft = activeType === 'pharmacy' ? 10 : 0;
+    const borderTop = activeType === 'medsurg' ? 10 : 0;
+    
+    let newX = e.clientX - startX;
+    let newY = e.clientY - startY;
+
+    newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
+    newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+
+    const maxW = rect.width - borderLeft;
+    const maxH = rect.height - borderTop;
+
+    if (newX < 0) newX = 0;
+    if (newY < 0) newY = 0;
+    if (newX > maxW - item.offsetWidth) {
+      newX = Math.floor((maxW - item.offsetWidth) / GRID_SIZE) * GRID_SIZE;
+    }
+    if (newY > maxH - item.offsetHeight) {
+      newY = Math.floor((maxH - item.offsetHeight) / GRID_SIZE) * GRID_SIZE;
+    }
+
+    item.style.left = `${newX}px`;
+    item.style.top = `${newY}px`;
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (activeMove) {
+      activeMove = false;
+      item.style.zIndex = '';
+    }
+  });
+}
+
+// 5. Utility Command Routing
+clearBtn.addEventListener('click', () => {
+  canvas.querySelectorAll('.placed-item').forEach(item => item.remove());
+});
+
+changeRoomBtn.addEventListener('click', () => {
+  welcomeScreen.classList.remove('hidden');
+});
