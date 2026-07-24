@@ -9,10 +9,8 @@ let activeRoomFootprint = 'medium';
 let spawnedObjects = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("DOM loaded. Wiring up Pocket Nurse SimLab...");
-
   const welcomeScreen = document.getElementById('welcome-screen');
-  const workspaceScreen = document.getElementById('workspace-screen'); // Note: in your HTML, this is actually the container wrapper elements inside .pn-main-grid-viewport
+  const workspaceScreen = document.getElementById('workspace-screen');
   const medsurgBtn = document.getElementById('choose-medsurg');
   const pharmacyBtn = document.getElementById('choose-pharmacy');
   const changeRoomBtn = document.getElementById('change-room');
@@ -20,22 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (medsurgBtn) {
     medsurgBtn.addEventListener('click', () => {
-      console.log("Selected Med-Surg Lab");
       activeType = 'medsurg';
       launchWorkspace();
     });
-  } else {
-    console.error("Missing element: #choose-medsurg");
   }
 
   if (pharmacyBtn) {
     pharmacyBtn.addEventListener('click', () => {
-      console.log("Selected Pharmacy Lab");
       activeType = 'pharmacy';
       launchWorkspace();
     });
-  } else {
-    console.error("Missing element: #choose-pharmacy");
   }
 
   if (changeRoomBtn) {
@@ -55,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function launchWorkspace() {
-  // Use the .hidden class defined in your style.css (.dashboard-overlay.hidden)
   const welcomeScreen = document.getElementById('welcome-screen');
   if (welcomeScreen) {
     welcomeScreen.classList.add('hidden');
@@ -63,7 +54,6 @@ function launchWorkspace() {
 
   updateFootprintStats();
   
-  // Give the DOM a tiny frame to breathe so container dimensions are computed before Three.js mounts
   setTimeout(() => {
     initThreeJS();
     load3DMenuCatalog();
@@ -133,10 +123,7 @@ function load3DMenuCatalog() {
 
 function initThreeJS() {
   const container = document.getElementById('blueprint-canvas');
-  if (!container) {
-    console.error("Target container #blueprint-canvas not found!");
-    return;
-  }
+  if (!container) return;
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf8fafc);
@@ -185,14 +172,46 @@ function buildRoomEnvironment() {
   });
 
   const preset = sizePresets[activeRoomFootprint] || sizePresets.medium;
-  
-  const floorGeo = new THREE.PlaneGeometry(preset.floorScale.x, preset.floorScale.z);
+  const width = preset.floorScale.x;
+  const depth = preset.floorScale.z;
+  const wallHeight = 3.2;
+
+  // Floor
+  const floorGeo = new THREE.PlaneGeometry(width, depth);
   const floorMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.8 });
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   floor.userData.isEnvironment = true;
   scene.add(floor);
+
+  // Room Walls
+  const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.9, side: THREE.DoubleSide });
+
+  // Back Wall
+  const backWallGeo = new THREE.PlaneGeometry(width, wallHeight);
+  const backWall = new THREE.Mesh(backWallGeo, wallMaterial);
+  backWall.position.set(0, wallHeight / 2, -depth / 2);
+  backWall.receiveShadow = true;
+  backWall.userData.isEnvironment = true;
+  scene.add(backWall);
+
+  // Left Wall
+  const sideWallGeo = new THREE.PlaneGeometry(depth, wallHeight);
+  const leftWall = new THREE.Mesh(sideWallGeo, wallMaterial);
+  leftWall.position.set(-width / 2, wallHeight / 2, 0);
+  leftWall.rotation.y = Math.PI / 2;
+  leftWall.receiveShadow = true;
+  leftWall.userData.isEnvironment = true;
+  scene.add(leftWall);
+
+  // Right Wall
+  const rightWall = new THREE.Mesh(sideWallGeo, wallMaterial);
+  rightWall.position.set(width / 2, wallHeight / 2, 0);
+  rightWall.rotation.y = -Math.PI / 2;
+  rightWall.receiveShadow = true;
+  rightWall.userData.isEnvironment = true;
+  scene.add(rightWall);
 }
 
 function spawn3DObject(itemData) {
