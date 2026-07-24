@@ -16,12 +16,12 @@ const catalogs = {
     themeClass: "medsurg-theme",
     items: [
       { label: "Patient Bed", icon: "🛏️", sub: "Multi-position electric model", bg: "#e0f2fe", dims: [1.4, 0.7, 2.2], color: 0x0284c7 },
-      { label: "Medical Headwall", icon: "🔌", sub: "Integrated gas & electrical panel", bg: "#e0f2fe", dims: [1.6, 1.4, 0.3], color: 0x334155 },
+      { label: "Medical Headwall", icon: "🔌", sub: "Integrated gas & electrical panel", bg: "#e0f2fe", dims: [1.4, 0.6, 0.05], color: 0xf8fafc, isWallItem: true },
       { label: "Bedside Cabinet", icon: "🗄️", sub: "Rolling 3-drawer bedside unit", bg: "#fef3c7", dims: [0.6, 0.8, 0.6], color: 0xd97706 },
       { label: "Adult Manikin", icon: "🧍", sub: "High-Fidelity Patient Simulator", bg: "#f1f5f9", dims: [0.6, 0.4, 1.8], color: 0x64748b },
       { label: "IV Pole", icon: "⚗️", sub: "Mobile rolling infusion stand", bg: "#dcfce7", dims: [0.6, 1.8, 0.6], color: 0x64748b },
       { label: "Overbed Table", icon: "🪵", sub: "C-base rolling medical tray", bg: "#fef3c7", dims: [1.0, 0.9, 0.5], color: 0xd97706 },
-      { label: "Bio-Waste", icon: "🟥", sub: "Regulated wall sharp box", bg: "#fee2e2", dims: [0.4, 0.5, 0.3], color: 0xdc2626 }
+      { label: "Bio-Waste", icon: "🟥", sub: "Regulated wall sharp box", bg: "#fee2e2", dims: [0.4, 0.5, 0.3], color: 0xdc2626, isWallItem: true }
     ]
   },
   pharmacy: {
@@ -369,41 +369,38 @@ function spawn3DObject(itemData) {
     const sizeConfig = sizePresets[sizeSelect.value];
     const halfZ = sizeConfig.floorScale.z / 2;
     
-    const wallPanelGeo = new THREE.BoxGeometry(1.6, 1.1, 0.08);
-    const wallPanelMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.2 });
-    const wallPanel = new THREE.Mesh(wallPanelGeo, wallPanelMat);
-    wallPanel.position.set(0, 1.15, -halfZ + 0.04); 
-    group.add(wallPanel);
+    const panelGeo = new THREE.BoxGeometry(1.4, 0.6, 0.04);
+    const panelMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
+    const panel = new THREE.Mesh(panelGeo, panelMat);
+    panel.position.set(0, 1.05, -halfZ + 0.02);
+    group.add(panel);
 
-    const stripGeo = new THREE.BoxGeometry(1.5, 0.2, 0.02);
-    const stripMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.4 });
+    const stripGeo = new THREE.BoxGeometry(1.3, 0.15, 0.02);
+    const stripMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.3, roughness: 0.4 });
     const strip = new THREE.Mesh(stripGeo, stripMat);
-    strip.position.set(0, 1.15, -halfZ + 0.09);
+    strip.position.set(0, 1.05, -halfZ + 0.05);
     group.add(strip);
 
-    const outletGeo = new THREE.BoxGeometry(0.12, 0.08, 0.02);
+    const outletGeo = new THREE.BoxGeometry(0.1, 0.06, 0.02);
     const colors = [0x22c55e, 0xef4444, 0x3b82f6];
     
     for (let i = -1; i <= 1; i++) {
       const outletMat = new THREE.MeshStandardMaterial({ color: colors[i + 1] });
       const outlet = new THREE.Mesh(outletGeo, outletMat);
-      outlet.position.set(i * 0.35, 1.15, -halfZ + 0.10);
+      outlet.position.set(i * 0.35, 1.05, -halfZ + 0.06);
       group.add(outlet);
     }
 
   } else if (itemData.label === "Bedside Cabinet") {
-    // 3-drawer wood-finish bedside cabinet matching the reference photo style
     const woodMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 });
     const trimMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.4 });
     const handleMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.8, roughness: 0.2 });
 
-    // Main cabinet body
     const bodyGeo = new THREE.BoxGeometry(0.55, 0.75, 0.55);
     const body = new THREE.Mesh(bodyGeo, woodMat);
     body.position.y = 0.375;
     group.add(body);
 
-    // 3 Drawer faces & handles stacked vertically
     const drawerHeights = [0.2, 0.2, 0.22];
     const drawerYPositions = [0.62, 0.38, 0.13];
 
@@ -413,7 +410,6 @@ function spawn3DObject(itemData) {
       face.position.set(0, yPos, 0.28);
       group.add(face);
 
-      // Handle
       const handleGeo = new THREE.BoxGeometry(0.18, 0.02, 0.03);
       const handle = new THREE.Mesh(handleGeo, handleMat);
       handle.position.set(0, yPos, 0.305);
@@ -421,30 +417,25 @@ function spawn3DObject(itemData) {
     });
 
   } else if (itemData.label === "Overbed Table") {
-    // C-base hospital overbed table with tray reaching halfway across the bed width
     const baseMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.3 });
     const chromeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.9, roughness: 0.1 });
     const woodMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 });
 
-    // C-Base foot on the floor
     const floorBaseGeo = new THREE.BoxGeometry(0.7, 0.06, 0.8);
     const floorBase = new THREE.Mesh(floorBaseGeo, baseMat);
     floorBase.position.set(-0.5, 0.03, 0);
     group.add(floorBase);
 
-    // Vertical telescoping column
     const columnGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.85, 12);
     const column = new THREE.Mesh(columnGeo, chromeMat);
     column.position.set(-0.75, 0.45, 0);
     group.add(column);
 
-    // Cantilever arm supporting the tray halfway across
     const armGeo = new THREE.BoxGeometry(0.8, 0.05, 0.15);
     const arm = new THREE.Mesh(armGeo, chromeMat);
     arm.position.set(-0.35, 0.85, 0);
     group.add(arm);
 
-    // Tabletop tray reaching halfway over the bed center
     const trayGeo = new THREE.BoxGeometry(0.7, 0.04, 0.9);
     const tray = new THREE.Mesh(trayGeo, woodMat);
     tray.position.set(0.1, 0.88, 0);
@@ -506,17 +497,47 @@ function spawn3DObject(itemData) {
     group.add(block);
   }
 
-  if (itemData.label === "Medical Headwall") {
-    const sizeConfig = sizePresets[sizeSelect.value];
+  // Position determination with overlap prevention (unless it's a wall item)
+  const sizeConfig = sizePresets[sizeSelect.value];
+  if (itemData.isWallItem) {
     group.position.x = 0;
     group.position.y = 0;
     group.position.z = -(sizeConfig.floorScale.z / 2);
   } else {
-    group.position.x = (Math.random() - 0.5) * 2;
+    // Find an empty spot on the floor avoiding overlapping existing floor items
+    let placed = false;
+    let attempts = 0;
+    const maxX = (sizeConfig.floorScale.x / 2) - 1;
+    const maxZ = (sizeConfig.floorScale.z / 2) - 1;
+
+    while (!placed && attempts < 20) {
+      const candidateX = Math.round(((Math.random() - 0.5) * maxX * 1.5) / 0.5) * 0.5;
+      const candidateZ = Math.round(((Math.random() - 0.5) * maxZ * 1.5) / 0.5) * 0.5;
+      
+      // Check collision with other non-wall items
+      let collision = false;
+      for (const existing of spawnedObjects) {
+        // Skip checking against wall items
+        if (existing.userData.isWallItem) continue;
+        
+        const dist = Math.hypot(existing.position.x - candidateX, existing.position.z - candidateZ);
+        if (dist < 1.2) {
+          collision = true;
+          break;
+        }
+      }
+
+      if (!collision || attempts === 19) {
+        group.position.x = candidateX;
+        group.position.z = candidateZ;
+        placed = true;
+      }
+      attempts++;
+    }
     group.position.y = 0;
-    group.position.z = (Math.random() - 0.5) * 2;
   }
 
+  group.userData.isWallItem = !!itemData.isWallItem;
   scene.add(group);
   spawnedObjects.push(group);
 }
