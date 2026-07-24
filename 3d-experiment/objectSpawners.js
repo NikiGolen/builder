@@ -8,7 +8,7 @@ export function createSpawnerGeometry(itemData) {
 
   group.userData.isWallItem = itemData.isWallItem || false;
 
-  // 1. Medical Headwall Rendering & Logic
+  // 1. Medical Headwall
   if (sku === "HW-MED-100" || label.toLowerCase().includes("headwall")) {
     const panelGeo = new THREE.BoxGeometry(1.8, 0.9, 0.08);
     const panelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4 });
@@ -35,7 +35,7 @@ export function createSpawnerGeometry(itemData) {
       group.add(outlet);
     }
   } 
-  // 2. Anatomical Educational Poster Rendering & Logic
+  // 2. Anatomical Educational Poster
   else if (sku === "PST-ANAT-202" || label.toLowerCase().includes("poster")) {
     const frameGeo = new THREE.BoxGeometry(0.85, 1.15, 0.02);
     const frameMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
@@ -55,57 +55,77 @@ export function createSpawnerGeometry(itemData) {
     diagram.position.set(0, 0, 0.02);
     group.add(diagram);
   } 
-  // 3. Patient Beds
+  // 3. Realistic Hospital Beds (Hill-Rom style multi-part assembly)
   else if (sku.includes("04-50-") || label.toLowerCase().includes("bed")) {
     const bedGroup = new THREE.Group();
 
-    const mattressGeo = new THREE.BoxGeometry(1.9, 0.3, 0.9);
-    const mattressMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.8 });
+    // Main Mattress Section
+    const mattressGeo = new THREE.BoxGeometry(1.9, 0.28, 0.9);
+    const mattressMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.9 });
     const mattress = new THREE.Mesh(mattressGeo, mattressMat);
-    mattress.position.set(0, 0.45, 0);
+    mattress.position.set(0, 0.5, 0);
     mattress.castShadow = true;
     bedGroup.add(mattress);
 
-    const frameGeo = new THREE.BoxGeometry(1.95, 0.25, 0.95);
-    const frameMat = new THREE.MeshStandardMaterial({ color: itemData.color || 0x2563eb, roughness: 0.3 });
-    const frame = new THREE.Mesh(frameGeo, frameMat);
-    frame.position.set(0, 0.2, 0);
-    frame.castShadow = true;
-    bedGroup.add(frame);
+    // Articulating Deck / Base Frame
+    const deckGeo = new THREE.BoxGeometry(1.92, 0.12, 0.92);
+    const deckMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 });
+    const deck = new THREE.Mesh(deckGeo, deckMat);
+    deck.position.set(0, 0.34, 0);
+    deck.castShadow = true;
+    bedGroup.add(deck);
 
-    const boardGeo = new THREE.BoxGeometry(0.1, 0.8, 1.0);
-    const boardMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
+    // Lower Mobile Chassis & Hi-Lo Columns
+    const chassisGeo = new THREE.BoxGeometry(1.5, 0.2, 0.75);
+    const chassisMat = new THREE.MeshStandardMaterial({ color: itemData.color || 0x1e293b, roughness: 0.3 });
+    const chassis = new THREE.Mesh(chassisGeo, chassisMat);
+    chassis.position.set(0, 0.12, 0);
+    chassis.castShadow = true;
+    bedGroup.add(chassis);
+
+    // Headboard & Footboard Panels
+    const headBoardGeo = new THREE.BoxGeometry(0.08, 0.85, 0.98);
+    const boardMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 });
     
-    const headboard = new THREE.Mesh(boardGeo, boardMat);
-    headboard.position.set(-1.0, 0.5, 0);
-    bedGroup.add(headboard);
+    const headBoard = new THREE.Mesh(headBoardGeo, boardMat);
+    headBoard.position.set(-0.98, 0.55, 0);
+    headBoard.castShadow = true;
+    bedGroup.add(headBoard);
 
-    const footboard = new THREE.Mesh(boardGeo, boardMat);
-    footboard.position.set(1.0, 0.5, 0);
-    bedGroup.add(footboard);
+    const footBoard = new THREE.Mesh(headBoardGeo, boardMat);
+    footBoard.position.set(0.98, 0.55, 0);
+    footBoard.castShadow = true;
+    bedGroup.add(footBoard);
+
+    // Side Safety Rails (Left & Right pairs)
+    const railGeo = new THREE.BoxGeometry(1.0, 0.15, 0.04);
+    const railMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 });
+    
+    [-0.48, 0.48].forEach((zPos) => {
+      const rail = new THREE.Mesh(railGeo, railMat);
+      rail.position.set(0, 0.48, zPos);
+      bedGroup.add(rail);
+    });
 
     group.add(bedGroup);
   } 
-  // 4. Overbed Tables (C-Base Design with Surface Tray)
+  // 4. Overbed Tables (C-Base Design)
   else if (sku.includes("1060P") || label.toLowerCase().includes("overbed table")) {
     const tableGroup = new THREE.Group();
 
-    // C-Base floor plate
     const baseGeo = new THREE.BoxGeometry(0.6, 0.05, 0.5);
     const chromeMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.8, roughness: 0.2 });
     const base = new THREE.Mesh(baseGeo, chromeMat);
     base.position.set(0, 0.025, 0);
     tableGroup.add(base);
 
-    // Vertical telescoping column
     const colGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.8, 16);
     const col = new THREE.Mesh(colGeo, chromeMat);
     col.position.set(-0.2, 0.42, 0);
     tableGroup.add(col);
 
-    // Tabletop tray surface
     const topGeo = new THREE.BoxGeometry(0.5, 0.04, 0.9);
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.6 }); // Light oak finish
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.6 });
     const tabletop = new THREE.Mesh(topGeo, woodMat);
     tabletop.position.set(0.1, 0.82, 0);
     tabletop.castShadow = true;
@@ -113,11 +133,10 @@ export function createSpawnerGeometry(itemData) {
 
     group.add(tableGroup);
   }
-  // 5. Cabinets & Storage Consoles (Bedside or Dispensing Units)
+  // 5. Cabinets & Consoles
   else if (sku.includes("PHARM-301") || sku.includes("5812P") || label.toLowerCase().includes("cabinet") || label.toLowerCase().includes("dispensing")) {
     const cabGroup = new THREE.Group();
 
-    // Main housing structure
     const bodyGeo = new THREE.BoxGeometry(0.6, 0.8, 0.6);
     const bodyMat = new THREE.MeshStandardMaterial({ color: itemData.color || 0x475569, roughness: 0.4 });
     const body = new THREE.Mesh(bodyGeo, bodyMat);
@@ -125,7 +144,6 @@ export function createSpawnerGeometry(itemData) {
     body.castShadow = true;
     cabGroup.add(body);
 
-    // Drawer face accents
     const drawerGeo = new THREE.BoxGeometry(0.02, 0.18, 0.52);
     const handleMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.1 });
     
@@ -137,7 +155,7 @@ export function createSpawnerGeometry(itemData) {
 
     group.add(cabGroup);
   }
-  // 6. Default Fallback Generator
+  // 6. Generic Fallback
   else {
     const dims = itemData.dims || [1, 1, 1];
     const boxGeo = new THREE.BoxGeometry(dims[0], dims[1], dims[2]);
