@@ -523,10 +523,20 @@ function load3DMenuCatalog() {
   catalogList.innerHTML = ''; 
 
   config.items.forEach((catGroup) => {
+    // Create collapsible category header
     const header = document.createElement('div');
     header.className = 'catalog-category-header';
     header.textContent = catGroup.category;
-    catalogList.appendChild(header);
+    
+    // Container for items under this category
+    const variantsContainer = document.createElement('div');
+    variantsContainer.className = 'catalog-variants-container';
+
+    // Toggle collapse/expand action on header click
+    header.addEventListener('click', () => {
+      header.classList.toggle('collapsed');
+      variantsContainer.classList.toggle('collapsed');
+    });
 
     catGroup.variants.forEach((item) => {
       const card = document.createElement('div');
@@ -540,8 +550,11 @@ function load3DMenuCatalog() {
         <button class="spawn-action-btn">Spawn Item ➕</button>
       `;
       card.querySelector('.spawn-action-btn').addEventListener('click', () => spawn3DObject(item));
-      catalogList.appendChild(card);
+      variantsContainer.appendChild(card);
     });
+
+    catalogList.appendChild(header);
+    catalogList.appendChild(variantsContainer);
   });
 }
 
