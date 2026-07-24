@@ -64,6 +64,10 @@ let planeIntersectionPoint = new THREE.Vector3();
 let selectedMesh = null;
 const routingPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
+// UI Overlays for Selection Halo and Rotation/Delete Actions
+let actionOverlay = null;
+let haloMesh = null;
+
 // 3. Application Lifecycle Setup
 function initializeWorkspace(type) {
   activeType = type;
@@ -85,13 +89,76 @@ document.addEventListener('DOMContentLoaded', () => {
     choiceButtons[1].addEventListener('click', () => initializeWorkspace('pharmacy'));
   }
 
-  // Keyboard listener for rotation (R key)
+  // Keyboard listener for deletion (Backspace / Delete) & Rotation (R key)
   window.addEventListener('keydown', (e) => {
-    if ((e.key === 'r' || e.key === 'R') && selectedMesh) {
-      selectedMesh.rotation.y += Math.PI / 2;
+    if (!selectedMesh) return;
+    if (e.key === 'r' || e.key === 'R') {
+      performRotation(selectedMesh);
+    } else if (e.key === 'Backspace' || e.key === 'Delete') {
+      removeSelectedItem();
     }
   });
+
+  createActionOverlayUI();
 });
+
+function createActionOverlayUI() {
+  actionOverlay = document.createElement('div');
+  actionOverlay.id = 'item-action-overlay';
+  actionOverlay.style.position = 'absolute';
+  actionOverlay.style.display = 'none';
+  actionOverlay.style.background = 'rgba(15, 23, 42, 0.9)';
+  actionOverlay.style.padding = '6px 10px';
+  actionOverlay.style.borderRadius = '8px';
+  actionOverlay.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+  actionOverlay.style.zIndex = '100';
+  actionOverlay.style.gap = '8px';
+  actionOverlay.style.alignItems = 'center';
+  actionOverlay.innerHTML = `
+    <button id="overlay-rotate" style="background:#3b82f6; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:4px;">🔄 Rotate 90°</button>
+    <button id="overlay-delete" style="background:#ef4444; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:12px;">Delete</button>
+  `;
+  document.body.appendChild(actionOverlay);
+
+  document.getElementById('overlay-rotate').addEventListener('click', () => {
+    if (selectedMesh) {
+      performRotation(selectedMesh);
+    }
+  });
+
+  document.getElementById('overlay-delete').addEventListener('click', () => {
+    removeSelectedItem();
+  });
+}
+
+function performRotation(mesh) {
+  if (mesh.userData.isWallItem) {
+    cycleWallAttachment(mesh);
+  } else {
+    mesh.rotation.y += Math.PI / 2;
+  }
+  updateHaloGeometry(mesh);
+}
+
+function removeSelectedItem() {
+  if (!selectedMesh) return;
+  scene.remove(selectedMesh);
+  const index = spawnedObjects.indexOf(selectedMesh);
+  if (index > -1) {
+    spawnedObjects.splice(index, 1);
+  }
+  selectedMesh = null;
+  if (haloMesh) haloMesh.visible = false;
+  if (actionOverlay) actionOverlay.style.display = 'none';
+  if (controls) controls.enabled = true;
+}
+
+function cycleWallAttachment(mesh) {
+  const walls = ['back', 'right', 'front', 'left'];
+  let currentWall = mesh.userData.wallName || 'back';
+  let nextIdx = (walls.indexOf(currentWall) + 1) % walls.length;
+  attachToWall(mesh, walls[nextIdx], mesh.userData.relativeX || 0);
+}
 
 // 4. Core Three.js Space Initialization Engine
 function init3DSpace() {
@@ -165,6 +232,14 @@ function init3DSpace() {
   gridHelper.position.y = 0.01;
   scene.add(gridHelper);
 
+  // Create Selection Halo Mesh
+  const haloGeo = new THREE.RingGeometry(0.8, 0.9, 32);
+  haloGeo.rotateX(-Math.PI / 2);
+  const haloMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+  haloMesh = new THREE.Mesh(haloGeo, haloMat);
+  haloMesh.visible = false;
+  scene.add(haloMesh);
+
   updateRoomDimensions();
   setupInteractionEvents(container);
 
@@ -172,7 +247,7 @@ function init3DSpace() {
   load3DMenuCatalog();
 }
 
-// 5. Drag-and-Drop Raycasting Module Logic
+// 5. Interaction & Wall Dragging Logic
 function setupInteractionEvents(container) {
   container.addEventListener('pointerdown', (e) => {
     const bounds = container.getBoundingClientRect();
@@ -188,7 +263,12 @@ function setupInteractionEvents(container) {
         obj = obj.parent;
       }
       selectedMesh = spawnedObjects.includes(obj) ? obj : hits[0].object;
+      updateHaloGeometry(selectedMesh);
       controls.enabled = false;
+    } else {
+      selectedMesh = null;
+      if (haloMesh) haloMesh.visible = false;
+      if (actionOverlay) actionOverlay.style.display = 'none';
     }
   });
 
@@ -200,18 +280,34 @@ function setupInteractionEvents(container) {
     mouseVector.y = -((e.clientY - bounds.top) / container.clientHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouseVector, camera);
-    
-    if (raycaster.ray.intersectPlane(routingPlane, planeIntersectionPoint)) {
+
+    if (selectedMesh.userData.isWallItem) {
+      const wallName = selectedMesh.userData.wallName || 'back';
       const sizeConfig = sizePresets[sizeSelect.value];
-      const maxX = (sizeConfig.floorScale.x / 2) - 0.5;
-      const maxZ = (sizeConfig.floorScale.z / 2) - 0.5;
+      const halfX = sizeConfig.floorScale.x / 2 - 0.8;
 
-      const clampedX = Math.max(-maxX, Math.min(maxX, planeIntersectionPoint.x));
-      const clampedZ = Math.max(-maxZ, Math.min(maxZ, planeIntersectionPoint.z));
+      if (raycaster.ray.intersectPlane(routingPlane, planeIntersectionPoint)) {
+        let relX = planeIntersectionPoint.x;
+        if (wallName === 'left' || wallName === 'right') {
+          relX = planeIntersectionPoint.z;
+        }
+        const clampedX = Math.max(-halfX, Math.min(halfX, relX));
+        attachToWall(selectedMesh, wallName, Math.round(clampedX / 0.5) * 0.5);
+      }
+    } else {
+      if (raycaster.ray.intersectPlane(routingPlane, planeIntersectionPoint)) {
+        const sizeConfig = sizePresets[sizeSelect.value];
+        const maxX = (sizeConfig.floorScale.x / 2) - 0.5;
+        const maxZ = (sizeConfig.floorScale.z / 2) - 0.5;
 
-      selectedMesh.position.x = Math.round(clampedX / 0.5) * 0.5;
-      selectedMesh.position.z = Math.round(clampedZ / 0.5) * 0.5;
+        const clampedX = Math.max(-maxX, Math.min(maxX, planeIntersectionPoint.x));
+        const clampedZ = Math.max(-maxZ, Math.min(maxZ, planeIntersectionPoint.z));
+
+        selectedMesh.position.x = Math.round(clampedX / 0.5) * 0.5;
+        selectedMesh.position.z = Math.round(clampedZ / 0.5) * 0.5;
+      }
     }
+    updateHaloGeometry(selectedMesh);
   });
  
   window.addEventListener('pointerup', () => {
@@ -220,7 +316,45 @@ function setupInteractionEvents(container) {
   });
 }
 
-// 6. Increased Wall Height (3.2 units tall for full room enclosure)
+function updateHaloGeometry(mesh) {
+  if (!haloMesh || !mesh) return;
+  const box = new THREE.Box3().setFromObject(mesh);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const maxDim = Math.max(size.x, size.z, 0.8) * 0.75;
+  
+  haloMesh.scale.set(maxDim, 1, maxDim);
+  haloMesh.position.set(mesh.position.x, 0.02, mesh.position.z);
+  haloMesh.visible = true;
+}
+
+function attachToWall(mesh, wallName, relativeX) {
+  const sizeConfig = sizePresets[sizeSelect.value];
+  const halfX = sizeConfig.floorScale.x / 2;
+  const halfZ = sizeConfig.floorScale.z / 2;
+  const wallOffset = 0.02;
+
+  mesh.userData.wallName = wallName;
+  mesh.userData.relativeX = relativeX;
+
+  mesh.rotation.set(0, 0, 0);
+
+  if (wallName === 'back') {
+    mesh.position.set(relativeX, 0, -halfZ + wallOffset);
+    mesh.rotation.y = 0;
+  } else if (wallName === 'front') {
+    mesh.position.set(-relativeX, 0, halfZ - wallOffset);
+    mesh.rotation.y = Math.PI;
+  } else if (wallName === 'left') {
+    mesh.position.set(-halfX + wallOffset, 0, relativeX);
+    mesh.rotation.y = Math.PI / 2;
+  } else if (wallName === 'right') {
+    mesh.position.set(halfX - wallOffset, 0, -relativeX);
+    mesh.rotation.y = -Math.PI / 2;
+  }
+}
+
+// 6. Wall & Room Generation
 function updateRoomWalls() {
   Object.values(wallsData).forEach(data => scene.remove(data.mesh));
   wallsData = {};
@@ -229,7 +363,7 @@ function updateRoomWalls() {
   const halfX = sizeConfig.floorScale.x / 2;
   const halfZ = sizeConfig.floorScale.z / 2;
   const wallThickness = 0.2;
-  const fullHeight = 3.2; // Increased height so walls look fully proportioned
+  const fullHeight = 3.2;
 
   const createWallMaterial = () => new THREE.MeshStandardMaterial({ 
     color: 0xf1f5f9, 
@@ -284,7 +418,7 @@ function updateRoomDimensions() {
   updateRoomWalls();
 }
 
-// 7. Continuous Loop Animation & Dynamic Camera-Facing Wall Fade Logic
+// 7. Animation Loop & UI Overlay Position Updates
 function animate() {
   requestAnimationFrame(animate);
   if (controls) controls.update();
@@ -301,12 +435,30 @@ function animate() {
     });
   }
 
+  // Follow active selected item with floating action overlay and rotate arrow indicator
+  if (selectedMesh && actionOverlay) {
+    const tempV = new THREE.Vector3();
+    selectedMesh.getWorldPosition(tempV);
+    tempV.y += selectedMesh.userData.isWallItem ? 0.6 : 1.4;
+    tempV.project(camera);
+
+    const container = document.getElementById('blueprint-canvas');
+    const x = (tempV.x *  .5 + .5) * container.clientWidth;
+    const y = (tempV.y * -.5 + .5) * container.clientHeight;
+
+    actionOverlay.style.display = 'flex';
+    actionOverlay.style.left = `${container.offsetLeft + x - 55}px`;
+    actionOverlay.style.top = `${container.offsetTop + y - 50}px`;
+  } else if (actionOverlay && !selectedMesh) {
+    actionOverlay.style.display = 'none';
+  }
+
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }
 }
 
-// 8. Sidebar Menu Rendering Engine
+// 8. Catalog & Object Spawners
 function load3DMenuCatalog() {
   const config = catalogs[activeType];
   
@@ -350,7 +502,7 @@ function spawn3DObject(itemData) {
     group.add(baseMesh);
 
     const mattressGeo = new THREE.BoxGeometry(1.3, 0.25, 2.1);
-    const mattressMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.7 }); // Light Blue
+    const mattressMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.7 });
     const mattressMesh = new THREE.Mesh(mattressGeo, mattressMat);
     mattressMesh.position.y = 0.35;
     group.add(mattressMesh);
@@ -373,19 +525,16 @@ function spawn3DObject(itemData) {
     group.add(footBoard);
 
   } else if (itemData.label === "Medical Headwall") {
-    const sizeConfig = sizePresets[sizeSelect.value];
-    const halfZ = sizeConfig.floorScale.z / 2;
-    
     const panelGeo = new THREE.BoxGeometry(1.4, 0.4, 0.03);
     const panelMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
     const panel = new THREE.Mesh(panelGeo, panelMat);
-    panel.position.set(0, 1.15, -halfZ + 0.02);
+    panel.position.set(0, 1.15, 0);
     group.add(panel);
 
     const stripGeo = new THREE.BoxGeometry(1.3, 0.12, 0.01);
     const stripMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.4, roughness: 0.3 });
     const strip = new THREE.Mesh(stripGeo, stripMat);
-    strip.position.set(0, 1.15, -halfZ + 0.04);
+    strip.position.set(0, 1.15, 0.02);
     group.add(strip);
 
     const outletGeo = new THREE.BoxGeometry(0.08, 0.05, 0.02);
@@ -394,37 +543,96 @@ function spawn3DObject(itemData) {
     for (let i = -1; i <= 1; i++) {
       const outletMat = new THREE.MeshStandardMaterial({ color: colors[i + 1] });
       const outlet = new THREE.Mesh(outletGeo, outletMat);
-      outlet.position.set(i * 0.35, 1.15, -halfZ + 0.05);
+      outlet.position.set(i * 0.35, 1.15, 0.03);
       group.add(outlet);
     }
 
   } else if (itemData.label === "Anatomical Poster") {
-    const sizeConfig = sizePresets[sizeSelect.value];
-    const halfZ = sizeConfig.floorScale.z / 2;
-
     const posterGeo = new THREE.BoxGeometry(0.9, 1.1, 0.02);
     const posterMat = new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.5 });
     const poster = new THREE.Mesh(posterGeo, posterMat);
-    poster.position.set(0, 2.1, -halfZ + 0.02); // Positioned higher up on the wall (above headwall)
+    poster.position.set(0, 2.1, 0);
     group.add(poster);
 
     const frameGeo = new THREE.BoxGeometry(0.94, 1.14, 0.01);
     const frameMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3 });
     const frame = new THREE.Mesh(frameGeo, frameMat);
-    frame.position.set(0, 2.1, -halfZ + 0.01);
+    frame.position.set(0, 2.1, -0.01);
     group.add(frame);
 
     const boneMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, roughness: 0.6 });
     
     const spineGeo = new THREE.BoxGeometry(0.06, 0.7, 0.01);
     const spine = new THREE.Mesh(spineGeo, boneMat);
-    spine.position.set(0, 2.1, -halfZ + 0.035);
+    spine.position.set(0, 2.1, 0.015);
     group.add(spine);
 
     const skullGeo = new THREE.BoxGeometry(0.12, 0.16, 0.015);
     const skull = new THREE.Mesh(skullGeo, boneMat);
-    skull.position.set(0, 2.45, -halfZ + 0.035);
+    skull.position.set(0, 2.45, 0.015);
     group.add(skull);
+
+  } else if (itemData.label === "Bio-Waste") {
+    // Wall Mount Bracket / Backing Plate
+    const mountGeo = new THREE.BoxGeometry(0.35, 0.45, 0.02);
+    const mountMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
+    const mountPlate = new THREE.Mesh(mountGeo, mountMat);
+    mountPlate.position.set(0, 1.1, 0.01);
+    group.add(mountPlate);
+
+    // Bottom Shelf Support
+    const shelfGeo = new THREE.BoxGeometry(0.38, 0.02, 0.28);
+    const shelf = new THREE.Mesh(shelfGeo, mountMat);
+    shelf.position.set(0, 0.88, 0.13);
+    group.add(shelf);
+
+    // Red Sharps Container Body
+    const binGeo = new THREE.BoxGeometry(0.32, 0.38, 0.24);
+    const binMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4 });
+    const bin = new THREE.Mesh(binGeo, binMat);
+    bin.position.set(0, 1.09, 0.13);
+    group.add(bin);
+
+    // Hazard Sticker Label on Front
+    const labelGeo = new THREE.PlaneGeometry(0.18, 0.22);
+    const canvasLabel = document.createElement('canvas');
+    canvasLabel.width = 256;
+    canvasLabel.height = 320;
+    const lCtx = canvasLabel.getContext('2d');
+    lCtx.fillStyle = '#ffffff';
+    lCtx.fillRect(0, 0, 256, 320);
+    lCtx.fillStyle = '#000000';
+    lCtx.font = 'bold 22px sans-serif';
+    lCtx.fillText('BIOHAZARD', 60, 40);
+    lCtx.font = '14px sans-serif';
+    lCtx.fillText('SHARPS CONTAINER', 45, 70);
+    lCtx.fillStyle = '#dc2626';
+    lCtx.beginPath();
+    lCtx.arc(128, 150, 35, 0, Math.PI * 2);
+    lCtx.fill();
+    const labelMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvasLabel) });
+    const sticker = new THREE.Mesh(labelGeo, labelMat);
+    sticker.position.set(0, 1.1, 0.252);
+    group.add(sticker);
+
+    // Translucent Plastic Lid
+    const lidBaseGeo = new THREE.BoxGeometry(0.34, 0.04, 0.26);
+    const lidMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, transparent: true, opacity: 0.7 });
+    const lidBase = new THREE.Mesh(lidBaseGeo, lidMat);
+    lidBase.position.set(0, 1.29, 0.13);
+    group.add(lidBase);
+
+    const lidTopGeo = new THREE.BoxGeometry(0.28, 0.08, 0.2);
+    const lidTop = new THREE.Mesh(lidTopGeo, lidMat);
+    lidTop.position.set(0, 1.35, 0.13);
+    group.add(lidTop);
+
+    // Securing Black Strap Wrapping Around Container
+    const strapGeo = new THREE.BoxGeometry(0.34, 0.06, 0.26);
+    const strapMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+    const strap = new THREE.Mesh(strapGeo, strapMat);
+    strap.position.set(0, 1.2, 0.13);
+    group.add(strap);
 
   } else if (itemData.label === "Bedside Cabinet") {
     const woodMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 });
@@ -532,14 +740,14 @@ function spawn3DObject(itemData) {
     group.add(block);
   }
 
-  const sizeConfig = sizePresets[sizeSelect.value];
-  if (itemData.isWallItem) {
-    group.position.x = 0;
-    group.position.y = 0;
-    group.position.z = -(sizeConfig.floorScale.z / 2);
+  group.userData.isWallItem = !!itemData.isWallItem;
+
+  if (group.userData.isWallItem) {
+    attachToWall(group, 'back', 0);
   } else {
     let placed = false;
     let attempts = 0;
+    const sizeConfig = sizePresets[sizeSelect.value];
     const maxX = (sizeConfig.floorScale.x / 2) - 1;
     const maxZ = (sizeConfig.floorScale.z / 2) - 1;
 
@@ -568,9 +776,12 @@ function spawn3DObject(itemData) {
     group.position.y = 0;
   }
 
-  group.userData.isWallItem = !!itemData.isWallItem;
   scene.add(group);
   spawnedObjects.push(group);
+  
+  // Select newly spawned item automatically
+  selectedMesh = group;
+  updateHaloGeometry(selectedMesh);
 }
 
 // 9. Core Command Clear/Reset Triggers
@@ -579,6 +790,8 @@ if (clearBtn) {
     if (scene) {
       spawnedObjects.forEach(obj => scene.remove(obj));
       spawnedObjects.length = 0;
+      if (haloMesh) haloMesh.visible = false;
+      if (actionOverlay) actionOverlay.style.display = 'none';
     }
   });
 }
