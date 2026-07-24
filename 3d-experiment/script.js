@@ -175,35 +175,39 @@ function removeObjectByIndex(index) {
 function createActionOverlayUI() {
   actionOverlay = document.createElement('div');
   actionOverlay.id = 'item-action-overlay';
+  // Upgraded clean styling to fix the bad appearance
   actionOverlay.style.cssText = `
     position: absolute;
     display: none;
-    background: rgba(15, 23, 42, 0.9);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: #ffffff;
     padding: 6px 10px;
-    border-radius: 9999px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    z-index: 100;
-    gap: 8px;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+    z-index: 1000;
+    gap: 6px;
     align-items: center;
     pointer-events: auto;
   `;
   
   actionOverlay.innerHTML = `
-    <button id="overlay-rotate" title="Rotate 90°" style="background: transparent; color: #f8fafc; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px;">🔄</button>
-    <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.2);"></div>
-    <button id="overlay-delete" title="Delete Item" style="background: transparent; color: #f87171; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px;">🗑️</button>
+    <button id="overlay-rotate" title="Rotate 90°" style="background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.2s;"><span style="pointer-events: none;">🔄</span></button>
+    <button id="overlay-delete" title="Delete Item" style="background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.2s;"><span style="pointer-events: none;">🗑️</span></button>
   `;
   document.body.appendChild(actionOverlay);
 
-  document.getElementById('overlay-rotate').addEventListener('click', (e) => {
+  const rotBtn = document.getElementById('overlay-rotate');
+  rotBtn.addEventListener('mouseenter', () => { rotBtn.style.background = '#f1f5f9'; rotBtn.style.borderColor = '#cbd5e1'; });
+  rotBtn.addEventListener('mouseleave', () => { rotBtn.style.background = '#f8fafc'; rotBtn.style.borderColor = '#e2e8f0'; });
+  rotBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     if (selectedMesh) performRotation(selectedMesh);
   });
 
-  document.getElementById('overlay-delete').addEventListener('click', (e) => {
+  const delBtn = document.getElementById('overlay-delete');
+  delBtn.addEventListener('mouseenter', () => { delBtn.style.background = '#fee2e2'; delBtn.style.borderColor = '#fecaca'; });
+  delBtn.addEventListener('mouseleave', () => { delBtn.style.background = '#fef2f2'; delBtn.style.borderColor = '#fee2e2'; });
+  delBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     removeSelectedItem();
   });
@@ -485,7 +489,7 @@ function animate() {
   if (selectedMesh && haloMesh && haloMesh.visible && actionOverlay) {
     const tempV = new THREE.Vector3();
     selectedMesh.getWorldPosition(tempV);
-    tempV.y += selectedMesh.userData.isWallItem ? 0.4 : 0.8;
+    tempV.y += selectedMesh.userData.isWallItem ? 0.5 : 1.1;
     tempV.project(camera);
 
     const container = document.getElementById('blueprint-canvas');
@@ -494,8 +498,8 @@ function animate() {
       const x = (tempV.x * .5 + .5) * rect.width;
       const y = (tempV.y * -.5 + .5) * rect.height;
 
-      const clampedX = Math.max(rect.left + 30, Math.min(rect.right - 80, rect.left + x - 40));
-      const clampedY = Math.max(rect.top + 30, Math.min(rect.bottom - 40, rect.top + y - 20));
+      const clampedX = Math.max(rect.left + 40, Math.min(rect.right - 90, rect.left + x - 45));
+      const clampedY = Math.max(rect.top + 20, Math.min(rect.bottom - 40, rect.top + y - 25));
 
       actionOverlay.style.display = 'flex';
       actionOverlay.style.left = `${clampedX}px`;
