@@ -491,3 +491,45 @@ body {
 .spawn-action-btn:hover {
   background: #0284c7;
 }
+.catalog-category-header {
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  transition: background 0.2s ease;
+}
+
+.catalog-category-header:hover {
+  background: #e2e8f0;
+}
+
+.catalog-category-header::after {
+  content: '▼';
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+}
+
+.catalog-category-header.collapsed::after {
+  transform: rotate(-90deg);
+}
+
+.catalog-variants-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.catalog-variants-container.collapsed {
+  display: none;
+}
