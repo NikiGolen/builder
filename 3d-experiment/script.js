@@ -16,7 +16,8 @@ const catalogs = {
     themeClass: "medsurg-theme",
     items: [
       { label: "Patient Bed", icon: "🛏️", sub: "Multi-position electric model", bg: "#e0f2fe", dims: [1.4, 0.7, 2.2], color: 0x0284c7 },
-      { label: "Medical Headwall", icon: "🔌", sub: "Integrated gas & electrical panel", bg: "#e0f2fe", dims: [1.4, 0.6, 0.05], color: 0xf8fafc, isWallItem: true },
+      { label: "Medical Headwall", icon: "🔌", sub: "Integrated gas & electrical panel", bg: "#e0f2fe", dims: [1.4, 0.4, 0.04], color: 0xf8fafc, isWallItem: true },
+      { label: "Anatomical Poster", icon: "🖼️", sub: "Skeletal system educational chart", bg: "#fef08a", dims: [1.0, 1.2, 0.02], color: 0xfffbeb, isWallItem: true },
       { label: "Bedside Cabinet", icon: "🗄️", sub: "Rolling 3-drawer bedside unit", bg: "#fef3c7", dims: [0.6, 0.8, 0.6], color: 0xd97706 },
       { label: "Adult Manikin", icon: "🧍", sub: "High-Fidelity Patient Simulator", bg: "#f1f5f9", dims: [0.6, 0.4, 1.8], color: 0x64748b },
       { label: "IV Pole", icon: "⚗️", sub: "Mobile rolling infusion stand", bg: "#dcfce7", dims: [0.6, 1.8, 0.6], color: 0x64748b },
@@ -343,7 +344,7 @@ function spawn3DObject(itemData) {
     group.add(baseMesh);
 
     const mattressGeo = new THREE.BoxGeometry(1.3, 0.25, 2.1);
-    const mattressMat = new THREE.MeshStandardMaterial({ color: 0x581c87, roughness: 0.7 });
+    const mattressMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.7 }); // Light Blue
     const mattressMesh = new THREE.Mesh(mattressGeo, mattressMat);
     mattressMesh.position.y = 0.35;
     group.add(mattressMesh);
@@ -369,27 +370,61 @@ function spawn3DObject(itemData) {
     const sizeConfig = sizePresets[sizeSelect.value];
     const halfZ = sizeConfig.floorScale.z / 2;
     
-    const panelGeo = new THREE.BoxGeometry(1.4, 0.6, 0.04);
-    const panelMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
+    // Clean thin white panel without dark navy border blocks
+    const panelGeo = new THREE.BoxGeometry(1.4, 0.4, 0.03);
+    const panelMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
     const panel = new THREE.Mesh(panelGeo, panelMat);
-    panel.position.set(0, 1.05, -halfZ + 0.02);
+    panel.position.set(0, 1.15, -halfZ + 0.02);
     group.add(panel);
 
-    const stripGeo = new THREE.BoxGeometry(1.3, 0.15, 0.02);
-    const stripMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.3, roughness: 0.4 });
+    const stripGeo = new THREE.BoxGeometry(1.3, 0.12, 0.01);
+    const stripMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.4, roughness: 0.3 });
     const strip = new THREE.Mesh(stripGeo, stripMat);
-    strip.position.set(0, 1.05, -halfZ + 0.05);
+    strip.position.set(0, 1.15, -halfZ + 0.04);
     group.add(strip);
 
-    const outletGeo = new THREE.BoxGeometry(0.1, 0.06, 0.02);
+    const outletGeo = new THREE.BoxGeometry(0.08, 0.05, 0.02);
     const colors = [0x22c55e, 0xef4444, 0x3b82f6];
     
     for (let i = -1; i <= 1; i++) {
       const outletMat = new THREE.MeshStandardMaterial({ color: colors[i + 1] });
       const outlet = new THREE.Mesh(outletGeo, outletMat);
-      outlet.position.set(i * 0.35, 1.05, -halfZ + 0.06);
+      outlet.position.set(i * 0.35, 1.15, -halfZ + 0.05);
       group.add(outlet);
     }
+
+  } else if (itemData.label === "Anatomical Poster") {
+    const sizeConfig = sizePresets[sizeSelect.value];
+    const halfZ = sizeConfig.floorScale.z / 2;
+
+    // Poster backing frame (resembling an anatomical chart)
+    const posterGeo = new THREE.BoxGeometry(0.9, 1.1, 0.02);
+    const posterMat = new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.5 });
+    const poster = new THREE.Mesh(posterGeo, posterMat);
+    poster.position.set(0, 1.35, -halfZ + 0.02);
+    group.add(poster);
+
+    // Dark trim/frame
+    const frameGeo = new THREE.BoxGeometry(0.94, 1.14, 0.01);
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3 });
+    const frame = new THREE.Mesh(frameGeo, frameMat);
+    frame.position.set(0, 1.35, -halfZ + 0.01);
+    group.add(frame);
+
+    // Simplified skeletal illustration bars/shapes on the poster
+    const boneMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, roughness: 0.6 });
+    
+    // Central skeleton pillar
+    const spineGeo = new THREE.BoxGeometry(0.06, 0.7, 0.01);
+    const spine = new THREE.Mesh(spineGeo, boneMat);
+    spine.position.set(0, 1.35, -halfZ + 0.035);
+    group.add(spine);
+
+    // Skull representation
+    const skullGeo = new THREE.BoxGeometry(0.12, 0.16, 0.015);
+    const skull = new THREE.Mesh(skullGeo, boneMat);
+    skull.position.set(0, 1.7, -halfZ + 0.035);
+    group.add(skull);
 
   } else if (itemData.label === "Bedside Cabinet") {
     const woodMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 });
@@ -497,14 +532,13 @@ function spawn3DObject(itemData) {
     group.add(block);
   }
 
-  // Position determination with overlap prevention (unless it's a wall item)
+  // Position determination with overlap prevention (unless wall item)
   const sizeConfig = sizePresets[sizeSelect.value];
   if (itemData.isWallItem) {
     group.position.x = 0;
     group.position.y = 0;
     group.position.z = -(sizeConfig.floorScale.z / 2);
   } else {
-    // Find an empty spot on the floor avoiding overlapping existing floor items
     let placed = false;
     let attempts = 0;
     const maxX = (sizeConfig.floorScale.x / 2) - 1;
@@ -514,10 +548,8 @@ function spawn3DObject(itemData) {
       const candidateX = Math.round(((Math.random() - 0.5) * maxX * 1.5) / 0.5) * 0.5;
       const candidateZ = Math.round(((Math.random() - 0.5) * maxZ * 1.5) / 0.5) * 0.5;
       
-      // Check collision with other non-wall items
       let collision = false;
       for (const existing of spawnedObjects) {
-        // Skip checking against wall items
         if (existing.userData.isWallItem) continue;
         
         const dist = Math.hypot(existing.position.x - candidateX, existing.position.z - candidateZ);
