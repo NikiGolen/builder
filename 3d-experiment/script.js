@@ -8,7 +8,7 @@ let activeType = 'medsurg';
 let activeRoomFootprint = 'medium'; 
 let spawnedObjects = [];
 
-// DOM Elements (Initialized inside DOMContentLoaded to ensure they exist)
+// DOM Elements
 let welcomeScreen, workspaceScreen, catalogList, sidebarTitle, sidebarDesc, activeRoomTitle, roomSizeSelector;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -20,8 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
   activeRoomTitle = document.getElementById('active-room-title');
   roomSizeSelector = document.getElementById('room-size-selector');
 
-  // Bind room selection cards safely
-  document.querySelectorAll('.room-card').forEach(card => {
+  // Direct click bindings for room selection cards
+  const roomCards = document.querySelectorAll('.room-card');
+  roomCards.forEach(card => {
     card.addEventListener('click', () => {
       activeType = card.getAttribute('data-room-type') || 'medsurg';
       initializeWorkspace();
