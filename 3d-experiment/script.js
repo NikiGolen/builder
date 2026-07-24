@@ -77,6 +77,606 @@ const catalogList = document.getElementById('catalog-list');
 const sidebarTitle = document.getElementById('sidebar-title');
 const sidebarDesc = document.getElementById('sidebar-desc');
 const activeRoomTitle = document.getElementById('active-room-title');
+const sizeSelect = document.getElementById('room-size-select');
+const footprintDims = document.getElementById('footprint-dims');
+const footprintArea = document.getElementById('footprint-area');
+
+let scene, camera, renderer, floor, gridHelper, controls;
+const spawnedObjects = [];
+let wallsData = {};
+let activeType = 'medsurg';
+
+// Interaction State Properties
+const raycaster = new THREE.Raycaster();
+const mouseVector = new THREE.Vector2();
+let planeIntersectionPoint = new THREE.Vector3();
+let selectedMesh = null;
+const routingPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+let actionOverlay = null;
+let haloMesh = null;
+
+// 3. Application Lifecycle Setup
+function initializeWorkspace(type) {
+  activeType = type;
+  if (welcomeScreen) {
+    welcomeScreen.classList.add('hidden');
+    welcomeScreen.style.opacity = '0';
+    welcomeScreen.style.visibility = 'hidden';
+    welcomeScreen.style.pointerEvents = 'none';
+    welcomeScreen.style.display = 'none';
+  }
+  init3DSpace();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const choiceButtons = document.querySelectorAll('.choice-btn, [id*="medsurg"], [id*="pharmacy"], .room-choice, #welcome-screen div[style*="cursor"], #welcome-screen img, #welcome-screen button, .welcome-card, div > strong');
+  
+  if (choiceButtons.length >= 2) {
+    choiceButtons[0].addEventListener('click', () => initializeWorkspace('medsurg'));
+    choiceButtons[1].addEventListener('click', () => initializeWorkspace('pharmacy'));
+  }
+
+  const welcomeContainer = document.getElementById('welcome-screen');
+  if (welcomeContainer) {
+    welcomeContainer.addEventListener('click', (e) => {
+      const targetCard = e.target.closest('div[style*="cursor"], div[class*="choice"], div');
+      if (targetCard && (targetCard.textContent.includes('Med-Surg') || targetCard.textContent.includes('Hospital'))) {
+        initializeWorkspace('medsurg');
+      } else if (targetCard && targetCard.textContent.includes('Pharmacy')) {
+        initializeWorkspace('pharmacy');
+      }
+    });
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (!selectedMesh) return;
+    if (e.key === 'r' || e.key === 'R') {
+      performRotation(selectedMesh);
+    } else if (e.key === 'Backspace' || e.key === 'Delete') {
+      removeSelectedItem();
+    }
+  });
+
+  createActionOverlayUI();
+});
+
+function createActionOverlayUI() {
+  actionOverlay = document.createElement('div');
+  actionOverlay.id = 'item-action-overlay';
+  actionOverlay.style.cssText = `
+    position: absolute;
+    display: none;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 4px;
+    border-radius: 9999px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    z-index: 100;
+    gap: 4px;
+    align-items: center;
+    pointer-events: auto;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  `;
+  
+  actionOverlay.innerHTML = `
+    <button id="overlay-rotate" title="Rotate 90°" style="background: transparent; color: #f8fafc; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px;">🔄</button>
+    <div style="width: 1px; height: 18px; background: rgba(255,255,255,0.2); margin: 0 2px;"></div>
+    <button id="overlay-delete" title="Delete Item" style="background: transparent; color: #f87171; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px;">🗑️</button>
+  `;
+  document.body.appendChild(actionOverlay);
+
+  document.getElementById('overlay-rotate').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (selectedMesh) performRotation(selectedMesh);
+  });
+
+  document.getElementById('overlay-delete').addEventListener('click', (e) => {
+    e.stopPropagation();
+    removeSelectedItem();
+  });
+}
+
+function performRotation(mesh) {
+  if (mesh.userData.isWallItem) {
+    cycleWallAttachment(mesh);
+  } else {
+    mesh.rotation.y += Math.PI / 2;
+  }
+  updateHaloGeometry(mesh);
+}
+
+function removeSelectedItem() {
+  if (!selectedMesh) return;
+  scene.remove(selectedMesh);
+  const index = spawnedObjects.indexOf(selectedMesh);
+  if (index > -1) spawnedObjects.splice(index, 1);
+  selectedMesh = null;
+  if (haloMesh) haloMesh.visible = false;
+  if (actionOverlay) actionOverlay.style.display = 'none';
+  if (controls) controls.enabled = true;
+}
+
+function cycleWallAttachment(mesh) {
+  const walls = ['back', 'right', 'front', 'left'];
+  let currentWall = mesh.userData.wallName || 'back';
+  let nextIdx = (walls.indexOf(currentWall) + 1) % walls.length;
+  attachToWall(mesh, walls[nextIdx], mesh.userData.relativeX || 0);
+}
+
+// 4. Core Three.js Space Initialization Engine
+function init3DSpace() {
+  const container = document.getElementById('blueprint-canvas');
+  if (!container) return;
+  container.innerHTML = ''; 
+
+  scene = new THREE.Scene();
+
+  const canvasTex = document.createElement('canvas');
+  canvasTex.width = 512;
+  canvasTex.height = 512;
+  const ctx = canvasTex.getContext('2d');
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, 512, 512);
+
+  scene.background = new THREE.CanvasTexture(canvasTex);
+
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+
+  camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+  camera.position.set(0, 12, 14); 
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+  renderer.setSize(width, height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.domElement.style.display = 'block';
+  renderer.domElement.style.width = '100%';
+  renderer.domElement.style.height = '100%';
+  container.appendChild(renderer.domElement);
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.maxPolarAngle = Math.PI / 2 - 0.05;
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+  scene.add(ambientLight);
+
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.85);
+  directionalLight.position.set(15, 25, 10);
+  scene.add(directionalLight);
+
+  const floorGeo = new THREE.BoxGeometry(1, 0.2, 1); 
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.15, metalness: 0.05 });
+  floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.position.set(0, -0.1, 0);
+  scene.add(floor);
+
+  gridHelper = new THREE.GridHelper(1, 1, 0x1e3a8a, 0x93c5fd);
+  gridHelper.position.y = 0.01;
+  scene.add(gridHelper);
+
+  const haloGeo = new THREE.RingGeometry(0.8, 0.9, 32);
+  haloGeo.rotateX(-Math.PI / 2);
+  const haloMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, side: THREE.DoubleSide, transparent: true, opacity: 0.9, depthWrite: false });
+  haloMesh = new THREE.Mesh(haloGeo, haloMat);
+  haloMesh.renderOrder = 999;
+  haloMesh.visible = false;
+  scene.add(haloMesh);
+
+  updateRoomDimensions();
+  setupInteractionEvents(container);
+
+  animate();
+  load3DMenuCatalog();
+}
+
+// 5. Interaction & Wall Dragging Logic
+function setupInteractionEvents(container) {
+  container.addEventListener('pointerdown', (e) => {
+    if (actionOverlay && actionOverlay.contains(e.target)) return;
+
+    const bounds = container.getBoundingClientRect();
+    mouseVector.x = ((e.clientX - bounds.left) / container.clientWidth) * 2 - 1;
+    mouseVector.y = -((e.clientY - bounds.top) / container.clientHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouseVector, camera);
+    const hits = raycaster.intersectObjects(spawnedObjects, true);
+
+    if (hits.length > 0) {
+      let obj = hits[0].object;
+      while (obj.parent && obj.parent !== scene && !spawnedObjects.includes(obj)) {
+        obj = obj.parent;
+      }
+      selectedMesh = spawnedObjects.includes(obj) ? obj : hits[0].object;
+      controls.enabled = false;
+    } else {
+      selectedMesh = null;
+      if (haloMesh) haloMesh.visible = false;
+      if (actionOverlay) actionOverlay.style.display = 'none';
+    }
+  });
+
+  container.addEventListener('dblclick', (e) => {
+    const bounds = container.getBoundingClientRect();
+    mouseVector.x = ((e.clientX - bounds.left) / container.clientWidth) * 2 - 1;
+    mouseVector.y = -((e.clientY - bounds.top) / container.clientHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouseVector, camera);
+    const hits = raycaster.intersectObjects(spawnedObjects, true);
+
+    if (hits.length > 0) {
+      let obj = hits[0].object;
+      while (obj.parent && obj.parent !== scene && !spawnedObjects.includes(obj)) {
+        obj = obj.parent;
+      }
+      selectedMesh = spawnedObjects.includes(obj) ? obj : hits[0].object;
+      updateHaloGeometry(selectedMesh);
+    } else {
+      selectedMesh = null;
+      if (haloMesh) haloMesh.visible = false;
+      if (actionOverlay) actionOverlay.style.display = 'none';
+    }
+  });
+
+  container.addEventListener('pointermove', (e) => {
+    if (!selectedMesh) return;
+
+    const bounds = container.getBoundingClientRect();
+    mouseVector.x = ((e.clientX - bounds.left) / container.clientWidth) * 2 - 1;
+    mouseVector.y = -((e.clientY - bounds.top) / container.clientHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouseVector, camera);
+
+    if (selectedMesh.userData.isWallItem) {
+      const wallName = selectedMesh.userData.wallName || 'back';
+      const sizeConfig = sizePresets[sizeSelect.value];
+      const halfX = sizeConfig.floorScale.x / 2 - 0.8;
+
+      if (raycaster.ray.intersectPlane(routingPlane, planeIntersectionPoint)) {
+        let relX = planeIntersectionPoint.x;
+        if (wallName === 'left' || wallName === 'right') relX = planeIntersectionPoint.z;
+        const clampedX = Math.max(-halfX, Math.min(halfX, relX));
+        attachToWall(selectedMesh, wallName, Math.round(clampedX / 0.5) * 0.5);
+      }
+    } else {
+      if (raycaster.ray.intersectPlane(routingPlane, planeIntersectionPoint)) {
+        const sizeConfig = sizePresets[sizeSelect.value];
+        const maxX = (sizeConfig.floorScale.x / 2) - 0.5;
+        const maxZ = (sizeConfig.floorScale.z / 2) - 0.5;
+
+        const clampedX = Math.max(-maxX, Math.min(maxX, planeIntersectionPoint.x));
+        const clampedZ = Math.max(-maxZ, Math.min(maxZ, planeIntersectionPoint.z));
+
+        selectedMesh.position.x = Math.round(clampedX / 0.5) * 0.5;
+        selectedMesh.position.z = Math.round(clampedZ / 0.5) * 0.5;
+      }
+    }
+    updateHaloGeometry(selectedMesh);
+  });
+ 
+  window.addEventListener('pointerup', () => {
+    selectedMesh = null;
+    if (controls) controls.enabled = true;
+  });
+}
+
+function updateHaloGeometry(mesh) {
+  if (!haloMesh || !mesh) return;
+  const box = new THREE.Box3().setFromObject(mesh);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const maxDim = Math.max(size.x, size.z, 0.8) * 0.75;
+  
+  haloMesh.scale.set(maxDim, 1, maxDim);
+  haloMesh.position.set(mesh.position.x, 0.02, mesh.position.z);
+  haloMesh.visible = true;
+}
+
+function attachToWall(mesh, wallName, relativeX) {
+  const sizeConfig = sizePresets[sizeSelect.value];
+  const halfX = sizeConfig.floorScale.x / 2;
+  const halfZ = sizeConfig.floorScale.z / 2;
+  const wallOffset = 0.02;
+
+  mesh.userData.wallName = wallName;
+  mesh.userData.relativeX = relativeX;
+  mesh.rotation.set(0, 0, 0);
+
+  if (wallName === 'back') {
+    mesh.position.set(relativeX, 0, -halfZ + wallOffset);
+    mesh.rotation.y = 0;
+  } else if (wallName === 'front') {
+    mesh.position.set(-relativeX, 0, halfZ - wallOffset);
+    mesh.rotation.y = Math.PI;
+  } else if (wallName === 'left') {
+    mesh.position.set(-halfX + wallOffset, 0, relativeX);
+    mesh.rotation.y = Math.PI / 2;
+  } else if (wallName === 'right') {
+    mesh.position.set(halfX - wallOffset, 0, -relativeX);
+    mesh.rotation.y = -Math.PI / 2;
+  }
+}
+
+// 6. Wall & Room Generation
+function updateRoomWalls() {
+  Object.values(wallsData).forEach(data => scene.remove(data.mesh));
+  wallsData = {};
+
+  const sizeConfig = sizePresets[sizeSelect.value];
+  const halfX = sizeConfig.floorScale.x / 2;
+  const halfZ = sizeConfig.floorScale.z / 2;
+  const wallThickness = 0.2;
+  const fullHeight = 3.2;
+
+  const createWallMaterial = () => new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.9, transparent: true, opacity: 1.0, side: THREE.DoubleSide });
+
+  const backWall = new THREE.Mesh(new THREE.BoxGeometry(sizeConfig.floorScale.x, fullHeight, wallThickness), createWallMaterial());
+  backWall.position.set(0, fullHeight / 2, -halfZ - (wallThickness / 2));
+  scene.add(backWall);
+  wallsData.back = { mesh: backWall, normal: new THREE.Vector3(0, 0, -1) };
+
+  const frontWall = new THREE.Mesh(new THREE.BoxGeometry(sizeConfig.floorScale.x, fullHeight, wallThickness), createWallMaterial());
+  frontWall.position.set(0, fullHeight / 2, halfZ + (wallThickness / 2));
+  scene.add(frontWall);
+  wallsData.front = { mesh: frontWall, normal: new THREE.Vector3(0, 0, 1) };
+
+  const sideGeo = new THREE.BoxGeometry(wallThickness, fullHeight, sizeConfig.floorScale.z);
+  const leftWall = new THREE.Mesh(sideGeo, createWallMaterial());
+  leftWall.position.set(-halfX - (wallThickness / 2), fullHeight / 2, 0);
+  scene.add(leftWall);
+  wallsData.left = { mesh: leftWall, normal: new THREE.Vector3(-1, 0, 0) };
+
+  const rightWall = new THREE.Mesh(sideGeo, createWallMaterial());
+  rightWall.position.set(halfX + (wallThickness / 2), fullHeight / 2, 0);
+  scene.add(rightWall);
+  wallsData.right = { mesh: rightWall, normal: new THREE.Vector3(1, 0, 0) };
+}
+
+function updateRoomDimensions() {
+  if (!floor || !gridHelper) return;
+  const sizeConfig = sizePresets[sizeSelect.value];
+  
+  if (footprintDims) footprintDims.textContent = sizeConfig.readout;
+  if (footprintArea) footprintArea.textContent = sizeConfig.area;
+
+  floor.scale.set(sizeConfig.floorScale.x, 1, sizeConfig.floorScale.z);
+  
+  scene.remove(gridHelper);
+  gridHelper = new THREE.GridHelper(Math.max(sizeConfig.floorScale.x, sizeConfig.floorScale.z), Math.max(sizeConfig.floorScale.x, sizeConfig.floorScale.z), 0x1e3a8a, 0x93c5fd);
+  gridHelper.position.y = 0.01;
+  scene.add(gridHelper);
+
+  updateRoomWalls();
+}
+
+// 7. Animation Loop & UI Overlay Position Updates
+function animate() {
+  requestAnimationFrame(animate);
+  if (controls) controls.update();
+
+  if (camera && Object.keys(wallsData).length > 0) {
+    const cameraDir = new THREE.Vector3().subVectors(camera.position, new THREE.Vector3(0, 0, 0)).normalize();
+    Object.values(wallsData).forEach(data => {
+      const dot = cameraDir.dot(data.normal);
+      const targetOpacity = dot > 0.05 ? 0.0 : 1.0; 
+      data.mesh.material.opacity += (targetOpacity - data.mesh.material.opacity) * 0.15;
+      data.mesh.material.transparent = true;
+      data.mesh.visible = data.mesh.material.opacity > 0.05;
+    });
+  }
+
+  if (selectedMesh && haloMesh && haloMesh.visible && actionOverlay) {
+    const tempV = new THREE.Vector3();
+    selectedMesh.getWorldPosition(tempV);
+    tempV.y += selectedMesh.userData.isWallItem ? 0.6 : 1.4;
+    tempV.project(camera);
+
+    const container = document.getElementById('blueprint-canvas');
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const x = (tempV.x * .5 + .5) * rect.width;
+      const y = (tempV.y * -.5 + .5) * rect.height;
+
+      actionOverlay.style.display = 'flex';
+      actionOverlay.style.left = `${rect.left + x - 40}px`;
+      actionOverlay.style.top = `${rect.top + y - 46}px`;
+    }
+  } else if (actionOverlay) {
+    actionOverlay.style.display = 'none';
+  }
+
+  if (renderer && scene && camera) renderer.render(scene, camera);
+}
+
+// 8. Catalog & Object Spawners
+function load3DMenuCatalog() {
+  const config = catalogs[activeType];
+  if (sidebarTitle) sidebarTitle.textContent = config.title;
+  if (sidebarDesc) sidebarDesc.textContent = config.desc;
+  if (activeRoomTitle) activeRoomTitle.textContent = config.headline;
+
+  if (!catalogList) return;
+  catalogList.innerHTML = ''; 
+
+  config.items.forEach((catGroup) => {
+    const header = document.createElement('div');
+    header.className = 'catalog-category-header';
+    header.textContent = catGroup.category;
+    catalogList.appendChild(header);
+
+    catGroup.variants.forEach((item) => {
+      const card = document.createElement('div');
+      card.className = 'catalog-item-card';
+      card.innerHTML = `
+        <div class="item-info">
+          <strong style="font-size: 0.85rem; color: #0f172a;">${item.label}</strong>
+          <span class="item-sku">SKU: ${item.sku}</span>
+          <p class="item-desc">${item.sub}</p>
+        </div>
+        <button class="spawn-action-btn">Spawn Item ➕</button>
+      `;
+      card.querySelector('.spawn-action-btn').addEventListener('click', () => spawn3DObject(item));
+      catalogList.appendChild(card);
+    });
+  });
+}
+
+function spawn3DObject(itemData) {
+  if (!scene) return;
+  const group = new THREE.Group();
+
+  if (itemData.sku === "PN-BED-102") {
+    // Advanced Hill-Rom style bed with articulated fowler frame & split side rails
+    const baseGeo = new THREE.BoxGeometry(1.2, 0.25, 2.0);
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
+    const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+    baseMesh.position.y = 0.12;
+    group.add(baseMesh);
+
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+    const wheelGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.06, 12);
+    wheelGeo.rotateZ(Math.PI / 2);
+    const wCoords = [[0.55, 0.06, 0.9], [-0.55, 0.06, 0.9], [0.55, 0.06, -0.9], [-0.55, 0.06, -0.9]];
+    wCoords.forEach(pos => {
+      const w = new THREE.Mesh(wheelGeo, wheelMat);
+      w.position.set(...pos);
+      group.add(w);
+    });
+
+    const deckGroup = new THREE.Group();
+    deckGroup.position.set(0, 0.35, 0);
+    group.add(deckGroup);
+
+    const mattressGeo = new THREE.BoxGeometry(1.1, 0.25, 1.9);
+    const mattressMat = new THREE.MeshStandardMaterial({ color: itemData.color || 0x1d4ed8, roughness: 0.8 });
+    const mattress = new THREE.Mesh(mattressGeo, mattressMat);
+    mattress.position.z = 0.05;
+    deckGroup.add(mattress);
+
+    const boardMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+    const accentMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 });
+
+    const headboard = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.8, 0.1), boardMat);
+    headboard.position.set(0, 0.55, -0.95);
+    group.add(headboard);
+
+    const hbAccent = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.2, 0.12), accentMat);
+    hbAccent.position.set(0, 0.55, -0.95);
+    group.add(hbAccent);
+
+    const footboard = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.6, 0.1), boardMat);
+    footboard.position.set(0, 0.45, 0.95);
+    group.add(footboard);
+
+    const railMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.2 });
+    [-0.65, 0.65].forEach(xPos => {
+      const hRail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.7), railMat);
+      hRail.position.set(xPos, 0.55, -0.4);
+      group.add(hRail);
+      const fRail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.7), railMat);
+      fRail.position.set(xPos, 0.55, 0.4);
+      group.add(fRail);
+    });
+
+  } else if (itemData.sku === "PN-IV-201" || itemData.sku === "PN-IV-202" || itemData.label === "IV Pole") {
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.3 });
+    const legGeo1 = new THREE.BoxGeometry(0.5, 0.04, 0.08);
+    const leg1 = new THREE.Mesh(legGeo1, baseMat);
+    leg1.position.y = 0.02;
+    group.add(leg1);
+
+    const legGeo2 = new THREE.BoxGeometry(0.08, 0.04, 0.5);
+    const leg2 = new THREE.Mesh(legGeo2, baseMat);
+    leg2.position.y = 0.02;
+    group.add(leg2);
+
+    const wheelGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.04, 12);
+    wheelGeo.rotateZ(Math.PI / 2);
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+    const wheelCoords = [[0.25, 0.02, 0], [-0.25, 0.02, 0], [0, 0.02, 0.25], [0, 0.02, -0.25]];
+    
+    wheelCoords.forEach(pos => {
+      const w = new THREE.Mesh(wheelGeo, wheelMat);
+      w.position.set(...pos);
+      group.add(w);
+    });
+
+    const poleGeo = new THREE.CylinderGeometry(0.025, 0.025, 1.6, 12);
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.6, roughness: 0.2 });
+    const pole = new THREE.Mesh(poleGeo, poleMat);
+    pole.position.y = 0.85;
+    group.add(pole);
+
+    const hookMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 });
+    for (let i = 0; i < 4; i++) {
+      const hookGroup = new THREE.Group();
+      hookGroup.rotation.y = (i * Math.PI) / 2;
+      
+      const armGeo = new THREE.BoxGeometry(0.12, 0.015, 0.015);
+      const arm = new THREE.Mesh(armGeo, hookMat);
+      arm.position.set(0.06, 1.62, 0);
+      hookGroup.add(arm);
+
+      const tipGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.06, 8);
+      const tip = new THREE.Mesh(tipGeo, hookMat);
+      tip.rotation.x = Math.PI / 3;
+      tip.position.set(0.11, 1.59, 0);
+      hookGroup.add(tip);
+
+      group.add(hookGroup);
+    }
+
+  } else if (itemData.label === "Patient Bed") {
+    const baseGeo = new THREE.BoxGeometry(1.2, 0.15, 2.0);
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 });
+    const baseMesh = new THREE.Mesh(baseGeo, frameMat);
+    baseMesh.position.y = 0.15;
+    group.add(baseMesh);
+
+    const mattressGeo = new THREE.BoxGeometry(1.3, 0.25, 2.1);
+    const mattressMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.7 });
+    const mattressMesh = new THREE.Mesh(mattressGeo, mattressMat);
+    mattressMesh.position.y = 0.35;
+    group.add(mattressMesh);
+
+  } else if (itemData.label === "Medical Headwall") {
+    const panelGeo = new THREE.BoxGeometry(1.4, 0.4, 0.03);
+    const panelMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+    const panel = new THREE.Mesh(panelGeo, panelMat);
+    panel.position.set(0, 1.15, 0);
+    group.add(panel);
+
+  } else {
+    // Fallback standard box generator for remaining catalog variants
+    const boxGeo = new THREE.BoxGeometry(itemData.dims[0], itemData.dims[1], itemData.dims[2]);
+    const boxMat = new THREE.MeshStandardMaterial({ color: itemData.color || 0x64748b, roughness: 0.5 });
+    const mesh = new THREE.Mesh(boxGeo, boxMat);
+    mesh.position.y = itemData.dims[1] / 2;
+    group.add(mesh);
+  }
+
+  if (itemData.isWallItem) {
+    attachToWall(group, 'back', 0);
+  } else {
+    group.position.set(0, 0, 0);
+  }
+
+  scene.add(group);
+  spawnedObjects.push(group);
+  selectedMesh = group;
+  updateHaloGeometry(group);
+}
+
+// 2. DOM Node Core Hooks
+const welcomeScreen = document.getElementById('welcome-screen');
+const catalogList = document.getElementById('catalog-list');
+const sidebarTitle = document.getElementById('sidebar-title');
+const sidebarDesc = document.getElementById('sidebar-desc');
+const activeRoomTitle = document.getElementById('active-room-title');
 const clearBtn = document.getElementById('clear-workspace');
 const changeRoomBtn = document.getElementById('change-room');
 const sizeSelect = document.getElementById('room-size-select');
