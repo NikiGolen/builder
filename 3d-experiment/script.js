@@ -77,6 +77,7 @@ function initializeWorkspace(type) {
     welcomeScreen.style.opacity = '0';
     welcomeScreen.style.visibility = 'hidden';
     welcomeScreen.style.pointerEvents = 'none';
+    welcomeScreen.style.display = 'none';
   }
   
   init3DSpace();
@@ -105,7 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function createActionOverlayUI() {
   actionOverlay = document.createElement('div');
   actionOverlay.id = 'item-action-overlay';
-  // Modern, sleek floating action bar styling with backdrop blur and smooth shadow
   actionOverlay.style.cssText = `
     position: absolute;
     display: none;
@@ -295,7 +295,6 @@ function init3DSpace() {
 // 5. Interaction & Wall Dragging Logic
 function setupInteractionEvents(container) {
   container.addEventListener('pointerdown', (e) => {
-    // If clicking directly on the action overlay, do not process canvas deselection
     if (actionOverlay && actionOverlay.contains(e.target)) return;
 
     const bounds = container.getBoundingClientRect();
@@ -488,7 +487,6 @@ function animate() {
   if (selectedMesh && actionOverlay) {
     const tempV = new THREE.Vector3();
     selectedMesh.getWorldPosition(tempV);
-    // Position directly above the item's top bounding boundary
     tempV.y += selectedMesh.userData.isWallItem ? 0.6 : 1.4;
     tempV.project(camera);
 
