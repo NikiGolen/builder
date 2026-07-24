@@ -432,16 +432,48 @@ body {
   left: 0;
   outline: none;
 }
+
 /* --- Catalog Category Headers & Product Variants --- */
 .catalog-category-header {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #1e3a8a;
-  margin: 14px 0 6px 2px;
-  letter-spacing: 0.05em;
-  border-bottom: 2px solid var(--pn-border);
-  padding-bottom: 3px;
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  transition: background 0.2s ease;
+}
+
+.catalog-category-header:hover {
+  background: #e2e8f0;
+}
+
+.catalog-category-header::after {
+  content: '▼';
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+}
+
+.catalog-category-header.is-expanded::after {
+  transform: rotate(-180deg);
+}
+
+.catalog-variants-container {
+  display: none; 
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.catalog-variants-container.is-expanded {
+  display: flex; 
 }
 
 .catalog-item-card {
@@ -490,45 +522,4 @@ body {
 
 .spawn-action-btn:hover {
   background: #0284c7;
-}
-.catalog-category-header {
-  background: #f1f5f9;
-  color: #0f172a;
-  padding: 10px 14px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: 6px;
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  user-select: none;
-  transition: background 0.2s ease;
-}
-
-.catalog-category-header:hover {
-  background: #e2e8f0;
-}
-
-.catalog-category-header::after {
-  content: '▼';
-  font-size: 0.7rem;
-  transition: transform 0.2s ease;
-}
-
-.catalog-category-header.is-expanded::after {
-  transform: rotate(-180deg);
-}
-
-.catalog-variants-container {
-  display: none; /* Hidden by default until expanded */
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 8px;
-  margin-bottom: 8px;
-}
-
-.catalog-variants-container.is-expanded {
-  display: flex; /* Shown when expanded */
 }
