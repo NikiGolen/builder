@@ -199,6 +199,10 @@ function init3DSpace() {
   haloMesh.visible = false;
   scene.add(haloMesh);
 
+  if (sizeSelect) {
+    sizeSelect.addEventListener('change', () => updateRoomDimensions());
+  }
+
   updateRoomDimensions();
   setupInteractionEvents(container);
 
@@ -265,7 +269,7 @@ function setupInteractionEvents(container) {
 
     if (selectedMesh.userData.isWallItem) {
       const wallName = selectedMesh.userData.wallName || 'back';
-      const sizeConfig = sizePresets[sizeSelect.value];
+      const sizeConfig = sizePresets[sizeSelect ? sizeSelect.value : 'medium'];
       const halfX = sizeConfig.floorScale.x / 2 - 0.8;
 
       if (raycaster.ray.intersectPlane(routingPlane, planeIntersectionPoint)) {
@@ -276,7 +280,7 @@ function setupInteractionEvents(container) {
       }
     } else {
       if (raycaster.ray.intersectPlane(routingPlane, planeIntersectionPoint)) {
-        const sizeConfig = sizePresets[sizeSelect.value];
+        const sizeConfig = sizePresets[sizeSelect ? sizeSelect.value : 'medium'];
         const maxX = (sizeConfig.floorScale.x / 2) - 0.5;
         const maxZ = (sizeConfig.floorScale.z / 2) - 0.5;
 
@@ -309,7 +313,7 @@ function updateHaloGeometry(mesh) {
 }
 
 function attachToWall(mesh, wallName, relativeX) {
-  const sizeConfig = sizePresets[sizeSelect.value];
+  const sizeConfig = sizePresets[sizeSelect ? sizeSelect.value : 'medium'];
   const halfX = sizeConfig.floorScale.x / 2;
   const halfZ = sizeConfig.floorScale.z / 2;
   const wallOffset = 0.02;
@@ -338,7 +342,7 @@ function updateRoomWalls() {
   Object.values(wallsData).forEach(data => scene.remove(data.mesh));
   wallsData = {};
 
-  const sizeConfig = sizePresets[sizeSelect.value];
+  const sizeConfig = sizePresets[sizeSelect ? sizeSelect.value : 'medium'];
   const halfX = sizeConfig.floorScale.x / 2;
   const halfZ = sizeConfig.floorScale.z / 2;
   const wallThickness = 0.2;
@@ -370,7 +374,7 @@ function updateRoomWalls() {
 
 function updateRoomDimensions() {
   if (!floor || !gridHelper) return;
-  const sizeConfig = sizePresets[sizeSelect.value];
+  const sizeConfig = sizePresets[sizeSelect ? sizeSelect.value : 'medium'];
   
   if (footprintDims) footprintDims.textContent = sizeConfig.readout;
   if (footprintArea) footprintArea.textContent = sizeConfig.area;
