@@ -8,8 +8,8 @@ let activeType = 'medsurg';
 let activeRoomFootprint = 'medium'; 
 let spawnedObjects = [];
 
-// DOM Elements
-let welcomeScreen, workspaceScreen, catalogList, sidebarTitle, sidebarDesc, activeRoomTitle, roomSizeSelector;
+// DOM Elements mapped to your exact HTML IDs
+let welcomeScreen, workspaceScreen, catalogList, sidebarTitle, sidebarDesc, activeRoomTitle, roomSizeSelect;
 
 document.addEventListener('DOMContentLoaded', () => {
   welcomeScreen = document.getElementById('welcome-screen');
@@ -18,20 +18,38 @@ document.addEventListener('DOMContentLoaded', () => {
   sidebarTitle = document.getElementById('sidebar-title');
   sidebarDesc = document.getElementById('sidebar-desc');
   activeRoomTitle = document.getElementById('active-room-title');
-  roomSizeSelector = document.getElementById('room-size-selector');
+  roomSizeSelect = document.getElementById('room-size-select');
 
-  // Direct click bindings for room selection cards
-  const roomCards = document.querySelectorAll('.room-card');
-  roomCards.forEach(card => {
-    card.addEventListener('click', () => {
-      activeType = card.getAttribute('data-room-type') || 'medsurg';
+  // Bind directly to your exact welcome buttons from index.html
+  const medsurgBtn = document.getElementById('choose-medsurg');
+  const pharmacyBtn = document.getElementById('choose-pharmacy');
+  const changeRoomBtn = document.getElementById('change-room');
+
+  if (medsurgBtn) {
+    medsurgBtn.addEventListener('click', () => {
+      activeType = 'medsurg';
       initializeWorkspace();
     });
-  });
+  }
 
-  if (roomSizeSelector) {
-    roomSizeSelector.addEventListener('change', (e) => {
+  if (pharmacyBtn) {
+    pharmacyBtn.addEventListener('click', () => {
+      activeType = 'pharmacy';
+      initializeWorkspace();
+    });
+  }
+
+  if (changeRoomBtn) {
+    changeRoomBtn.addEventListener('click', () => {
+      if (workspaceScreen) workspaceScreen.style.display = 'none';
+      if (welcomeScreen) welcomeScreen.style.display = 'flex';
+    });
+  }
+
+  if (roomSizeSelect) {
+    roomSizeSelect.addEventListener('change', (e) => {
       activeRoomFootprint = e.target.value;
+      updateFootprintStats();
       buildRoomEnvironment();
     });
   }
@@ -41,8 +59,17 @@ function initializeWorkspace() {
   if (welcomeScreen) welcomeScreen.style.display = 'none';
   if (workspaceScreen) workspaceScreen.style.display = 'flex';
   
+  updateFootprintStats();
   initThreeJS();
   load3DMenuCatalog();
+}
+
+function updateFootprintStats() {
+  const preset = sizePresets[activeRoomFootprint] || sizePresets.medium;
+  const dimsEl = document.getElementById('footprint-dims');
+  const areaEl = document.getElementById('footprint-area');
+  if (dimsEl) dimsEl.textContent = preset.readout;
+  if (areaEl) areaEl.textContent = preset.area;
 }
 
 function load3DMenuCatalog() {
@@ -81,7 +108,7 @@ function load3DMenuCatalog() {
           <span class="item-sku" style="font-size: 0.75rem; color: #2563eb; font-family: monospace;">SKU: ${item.sku}</span>
           <p class="item-desc" style="font-size: 0.75rem; color: #64748b; margin: 4px 0 0 0;">${item.sub}</p>
         </div>
-        <button class="spawn-action-btn">Spawn Item ➕</button>
+        <button class="spawn-action-btn" style="background: #1e293b; color: #ffffff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 500; margin-top: 6px;">Spawn Item ➕</button>
       `;
 
       card.querySelector('.spawn-action-btn').addEventListener('click', () => spawn3DObject(item));
@@ -94,7 +121,8 @@ function load3DMenuCatalog() {
 }
 
 function initThreeJS() {
-  const container = document.getElementById('canvas-container');
+  // Target the exact canvas ID from your HTML: #blueprint-canvas
+  const container = document.getElementById('blueprint-canvas');
   if (!container) return;
 
   scene = new THREE.Scene();
