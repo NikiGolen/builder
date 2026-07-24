@@ -18,7 +18,7 @@ const catalogs = {
       { label: "Patient Bed", icon: "🛏️", sub: "Multi-position electric model", bg: "#e0f2fe", dims: [1.4, 0.7, 2.2], color: 0x0284c7 },
       { label: "Medical Headwall", icon: "🔌", sub: "Integrated gas & electrical panel", bg: "#e0f2fe", dims: [1.6, 1.4, 0.3], color: 0x334155 },
       { label: "Adult Manikin", icon: "🧍", sub: "High-Fidelity Patient Simulator", bg: "#f1f5f9", dims: [0.6, 0.4, 1.8], color: 0x64748b },
-      { label: "IV Pump", icon: "⚗️", sub: "Dual-line medication pole", bg: "#dcfce7", dims: [0.8, 2.0, 0.8], color: 0x22c55e },
+      { label: "IV Pole", icon: "⚗️", sub: "Mobile rolling infusion stand", bg: "#dcfce7", dims: [0.6, 1.8, 0.6], color: 0x64748b },
       { label: "Overbed Table", icon: "🪵", sub: "Height-adjustable tray", bg: "#fef3c7", dims: [1.0, 0.9, 0.5], color: 0xd97706 },
       { label: "Bio-Waste", icon: "🟥", sub: "Regulated wall sharp box", bg: "#fee2e2", dims: [0.4, 0.5, 0.3], color: 0xdc2626 }
     ]
@@ -212,7 +212,7 @@ function setupInteractionEvents(container) {
   });
 }
 
-// 6. Sizing & Dynamic Wall Fading Modifiers (Back wall full height at 1.8, side/front walls lower at 0.8)
+// 6. Sizing & Dynamic Wall Fading Modifiers
 function updateRoomWalls() {
   Object.values(wallsData).forEach(data => scene.remove(data.mesh));
   wallsData = {};
@@ -230,7 +230,6 @@ function updateRoomWalls() {
     side: THREE.DoubleSide 
   });
 
-  // Back wall: Full height (1.8) so headwalls look completely natural mounted against it
   const backHeight = 1.8;
   const backGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, backHeight, wallThickness);
   const backWall = new THREE.Mesh(backGeo, createWallMaterial(1.0));
@@ -238,7 +237,6 @@ function updateRoomWalls() {
   scene.add(backWall);
   wallsData.back = { mesh: backWall, normal: new THREE.Vector3(0, 0, -1), isBack: true };
 
-  // Side and Front walls: Lower height (0.8) for easy viewing
   const lowHeight = 0.8;
 
   const frontGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, lowHeight, wallThickness);
@@ -289,7 +287,7 @@ function animate() {
     const cameraDir = new THREE.Vector3().subVectors(camera.position, new THREE.Vector3(0, 0, 0)).normalize();
 
     Object.values(wallsData).forEach(data => {
-      if (data.isBack) return; // Keep back wall fully solid and visible so headwalls look great
+      if (data.isBack) return;
 
       const dot = cameraDir.dot(data.normal);
       const targetOpacity = dot > 0.15 ? 0.12 : 1.0; 
@@ -371,29 +369,75 @@ function spawn3DObject(itemData) {
     group.add(footBoard);
 
   } else if (itemData.label === "Medical Headwall") {
-    // True clinical headwall scaled to mount properly on the full-height back wall above beds
     const wallPanelGeo = new THREE.BoxGeometry(1.6, 1.2, 0.15);
     const wallPanelMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.2 });
     const wallPanel = new THREE.Mesh(wallPanelGeo, wallPanelMat);
-    wallPanel.position.y = 0.9; // Positioned higher up so it sits directly above the bed level
+    wallPanel.position.y = 0.9;
     group.add(wallPanel);
 
-    // Integrated medical gas/electrical service strip
     const stripGeo = new THREE.BoxGeometry(1.5, 0.2, 0.05);
     const stripMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.4 });
     const strip = new THREE.Mesh(stripGeo, stripMat);
     strip.position.set(0, 0.9, 0.08);
     group.add(strip);
 
-    // Color-coded medical gas outlet plugs (Oxygen, Vacuum, Medical Air)
     const outletGeo = new THREE.BoxGeometry(0.12, 0.08, 0.02);
-    const colors = [0x22c55e, 0xef4444, 0x3b82f6]; // Green, Red, Blue
+    const colors = [0x22c55e, 0xef4444, 0x3b82f6];
     
     for (let i = -1; i <= 1; i++) {
       const outletMat = new THREE.MeshStandardMaterial({ color: colors[i + 1] });
       const outlet = new THREE.Mesh(outletGeo, outletMat);
       outlet.position.set(i * 0.35, 0.9, 0.11);
       group.add(outlet);
+    }
+
+  } else if (itemData.label === "IV Pole") {
+    // 4-Legged rolling base cross
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.3 });
+    const legGeo1 = new THREE.BoxGeometry(0.5, 0.04, 0.08);
+    const leg1 = new THREE.Mesh(legGeo1, baseMat);
+    leg1.position.y = 0.02;
+    group.add(leg1);
+
+    const legGeo2 = new THREE.BoxGeometry(0.08, 0.04, 0.5);
+    const leg2 = new THREE.Mesh(legGeo2, baseMat);
+    leg2.position.y = 0.02;
+    group.add(leg2);
+
+    // Caster wheels at tips
+    const wheelGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.04, 12);
+    wheelGeo.rotateZ(Math.PI / 2);
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+    const wheelCoords = [[0.25, 0.02, 0], [-0.25, 0.02, 0], [0, 0.02, 0.25], [0, 0.02, -0.25]];
+    
+    wheelCoords.forEach(pos => {
+      const w = new THREE.Mesh(wheelGeo, wheelMat);
+      w.position.set(...pos);
+      group.add(w);
+    });
+
+    // Vertical main pole
+    const poleGeo = new THREE.CylinderGeometry(0.025, 0.025, 1.6, 12);
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.6, roughness: 0.2 });
+    const pole = new THREE.Mesh(poleGeo, poleMat);
+    pole.position.y = 0.85;
+    group.add(pole);
+
+    // Chrome top hook assembly for hanging bags
+    const topCollarGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.1, 12);
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.9, roughness: 0.1 });
+    const topCollar = new THREE.Mesh(topCollarGeo, chromeMat);
+    topCollar.position.y = 1.65;
+    group.add(topCollar);
+
+    // 4 Hook arms radiating outward
+    for (let i = 0; i < 4; i++) {
+      const angle = (i * Math.PI) / 2;
+      const hookArmGeo = new THREE.BoxGeometry(0.15, 0.02, 0.02);
+      const hookArm = new THREE.Mesh(hookArmGeo, chromeMat);
+      hookArm.position.set(Math.cos(angle) * 0.07, 1.7, Math.sin(angle) * 0.07);
+      hookArm.rotation.y = -angle;
+      group.add(hookArm);
     }
 
   } else {
