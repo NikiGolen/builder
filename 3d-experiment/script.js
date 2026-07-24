@@ -10,7 +10,6 @@ let spawnedObjects = [];
 
 document.addEventListener('DOMContentLoaded', () => {
   const welcomeScreen = document.getElementById('welcome-screen');
-  const workspaceScreen = document.getElementById('workspace-screen');
   const medsurgBtn = document.getElementById('choose-medsurg');
   const pharmacyBtn = document.getElementById('choose-pharmacy');
   const changeRoomBtn = document.getElementById('change-room');
@@ -32,8 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (changeRoomBtn) {
     changeRoomBtn.addEventListener('click', () => {
-      const welcomeEl = document.getElementById('welcome-screen');
-      if (welcomeEl) welcomeEl.classList.remove('hidden');
+      if (welcomeScreen) welcomeScreen.classList.remove('hidden');
     });
   }
 
