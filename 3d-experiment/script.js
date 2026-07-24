@@ -212,7 +212,7 @@ function setupInteractionEvents(container) {
   });
 }
 
-// 6. Sizing & Dynamic Wall Fading Modifiers
+// 6. Dynamic View-Based Full-Height Walls & Camera-Facing Wall Disappearance
 function updateRoomWalls() {
   Object.values(wallsData).forEach(data => scene.remove(data.mesh));
   wallsData = {};
@@ -221,38 +221,37 @@ function updateRoomWalls() {
   const halfX = sizeConfig.floorScale.x / 2;
   const halfZ = sizeConfig.floorScale.z / 2;
   const wallThickness = 0.2;
+  const fullHeight = 1.8;
 
-  const createWallMaterial = (opacityVal = 1.0) => new THREE.MeshStandardMaterial({ 
+  const createWallMaterial = () => new THREE.MeshStandardMaterial({ 
     color: 0xf1f5f9, 
     roughness: 0.9,
     transparent: true,
-    opacity: opacityVal,
+    opacity: 1.0,
     side: THREE.DoubleSide 
   });
 
-  const backHeight = 1.8;
-  const backGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, backHeight, wallThickness);
-  const backWall = new THREE.Mesh(backGeo, createWallMaterial(1.0));
-  backWall.position.set(0, backHeight / 2, -halfZ - (wallThickness / 2));
+  // All 4 walls created at full height (1.8), dynamically hidden/faded based on camera angle
+  const backGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, fullHeight, wallThickness);
+  const backWall = new THREE.Mesh(backGeo, createWallMaterial());
+  backWall.position.set(0, fullHeight / 2, -halfZ - (wallThickness / 2));
   scene.add(backWall);
-  wallsData.back = { mesh: backWall, normal: new THREE.Vector3(0, 0, -1), isBack: true };
+  wallsData.back = { mesh: backWall, normal: new THREE.Vector3(0, 0, -1) };
 
-  const lowHeight = 0.8;
-
-  const frontGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, lowHeight, wallThickness);
+  const frontGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, fullHeight, wallThickness);
   const frontWall = new THREE.Mesh(frontGeo, createWallMaterial());
-  frontWall.position.set(0, lowHeight / 2, halfZ + (wallThickness / 2));
+  frontWall.position.set(0, fullHeight / 2, halfZ + (wallThickness / 2));
   scene.add(frontWall);
   wallsData.front = { mesh: frontWall, normal: new THREE.Vector3(0, 0, 1) };
 
-  const sideGeo = new THREE.BoxGeometry(wallThickness, lowHeight, sizeConfig.floorScale.z);
+  const sideGeo = new THREE.BoxGeometry(wallThickness, fullHeight, sizeConfig.floorScale.z);
   const leftWall = new THREE.Mesh(sideGeo, createWallMaterial());
-  leftWall.position.set(-halfX - (wallThickness / 2), lowHeight / 2, 0);
+  leftWall.position.set(-halfX - (wallThickness / 2), fullHeight / 2, 0);
   scene.add(leftWall);
   wallsData.left = { mesh: leftWall, normal: new THREE.Vector3(-1, 0, 0) };
 
   const rightWall = new THREE.Mesh(sideGeo, createWallMaterial());
-  rightWall.position.set(halfX + (wallThickness / 2), lowHeight / 2, 0);
+  rightWall.position.set(halfX + (wallThickness / 2), fullHeight / 2, 0);
   scene.add(rightWall);
   wallsData.right = { mesh: rightWall, normal: new THREE.Vector3(1, 0, 0) };
 }
@@ -278,7 +277,7 @@ function updateRoomDimensions() {
   updateRoomWalls();
 }
 
-// 7. Continuous Loop Animation & Dynamic Wall Transparency Logic
+// 7. Continuous Loop Animation & Dynamic Camera-Facing Wall Fade Logic
 function animate() {
   requestAnimationFrame(animate);
   if (controls) controls.update();
@@ -286,14 +285,13 @@ function animate() {
   if (camera && Object.keys(wallsData).length > 0) {
     const cameraDir = new THREE.Vector3().subVectors(camera.position, new THREE.Vector3(0, 0, 0)).normalize();
 
+    // Dynamically make walls facing the camera transparent/disappear so interior items & headwalls are fully visible
     Object.values(wallsData).forEach(data => {
-      if (data.isBack) return;
-
       const dot = cameraDir.dot(data.normal);
-      const targetOpacity = dot > 0.15 ? 0.12 : 1.0; 
+      const targetOpacity = dot > 0.1 ? 0.0 : 1.0; 
       
-      data.mesh.material.opacity += (targetOpacity - data.mesh.material.opacity) * 0.1;
-      data.mesh.material.transparent = data.mesh.material.opacity < 0.95;
+      data.mesh.material.opacity += (targetOpacity - data.mesh.material.opacity) * 0.15;
+      data.mesh.material.transparent = true;
     });
   }
 
@@ -369,16 +367,17 @@ function spawn3DObject(itemData) {
     group.add(footBoard);
 
   } else if (itemData.label === "Medical Headwall") {
+    // Mounted high up on full walls, perfectly positioned above beds
     const wallPanelGeo = new THREE.BoxGeometry(1.6, 1.2, 0.15);
     const wallPanelMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.2 });
     const wallPanel = new THREE.Mesh(wallPanelGeo, wallPanelMat);
-    wallPanel.position.y = 0.9;
+    wallPanel.position.y = 1.1; 
     group.add(wallPanel);
 
     const stripGeo = new THREE.BoxGeometry(1.5, 0.2, 0.05);
     const stripMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.4 });
     const strip = new THREE.Mesh(stripGeo, stripMat);
-    strip.position.set(0, 0.9, 0.08);
+    strip.position.set(0, 1.1, 0.08);
     group.add(strip);
 
     const outletGeo = new THREE.BoxGeometry(0.12, 0.08, 0.02);
@@ -387,12 +386,11 @@ function spawn3DObject(itemData) {
     for (let i = -1; i <= 1; i++) {
       const outletMat = new THREE.MeshStandardMaterial({ color: colors[i + 1] });
       const outlet = new THREE.Mesh(outletGeo, outletMat);
-      outlet.position.set(i * 0.35, 0.9, 0.11);
+      outlet.position.set(i * 0.35, 1.1, 0.11);
       group.add(outlet);
     }
 
   } else if (itemData.label === "IV Pole") {
-    // 4-Legged rolling base cross
     const baseMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.3 });
     const legGeo1 = new THREE.BoxGeometry(0.5, 0.04, 0.08);
     const leg1 = new THREE.Mesh(legGeo1, baseMat);
@@ -404,7 +402,6 @@ function spawn3DObject(itemData) {
     leg2.position.y = 0.02;
     group.add(leg2);
 
-    // Caster wheels at tips
     const wheelGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.04, 12);
     wheelGeo.rotateZ(Math.PI / 2);
     const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
@@ -416,21 +413,18 @@ function spawn3DObject(itemData) {
       group.add(w);
     });
 
-    // Vertical main pole
     const poleGeo = new THREE.CylinderGeometry(0.025, 0.025, 1.6, 12);
     const poleMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.6, roughness: 0.2 });
     const pole = new THREE.Mesh(poleGeo, poleMat);
     pole.position.y = 0.85;
     group.add(pole);
 
-    // Chrome top hook assembly for hanging bags
     const topCollarGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.1, 12);
     const chromeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.9, roughness: 0.1 });
     const topCollar = new THREE.Mesh(topCollarGeo, chromeMat);
     topCollar.position.y = 1.65;
     group.add(topCollar);
 
-    // 4 Hook arms radiating outward
     for (let i = 0; i < 4; i++) {
       const angle = (i * Math.PI) / 2;
       const hookArmGeo = new THREE.BoxGeometry(0.15, 0.02, 0.02);
