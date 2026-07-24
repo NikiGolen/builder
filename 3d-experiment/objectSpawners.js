@@ -1,44 +1,7 @@
 // objectSpawners.js
 import * as THREE from 'three';
 
-export function updateHaloGeometry(mesh, haloMesh) {
-  if (!haloMesh || !mesh) return;
-  const box = new THREE.Box3().setFromObject(mesh);
-  const size = new THREE.Vector3();
-  box.getSize(size);
-  const maxDim = Math.max(size.x, size.z, 0.8) * 0.75;
-  
-  haloMesh.scale.set(maxDim, 1, maxDim);
-  haloMesh.position.set(mesh.position.x, 0.02, mesh.position.z);
-  haloMesh.visible = true;
-}
-
-export function attachToWall(mesh, wallName, relativeX, sizeSelectValue, sizePresets) {
-  const sizeConfig = sizePresets[sizeSelectValue];
-  const halfX = sizeConfig.floorScale.x / 2;
-  const halfZ = sizeConfig.floorScale.z / 2;
-  const wallOffset = 0.02;
-
-  mesh.userData.wallName = wallName;
-  mesh.userData.relativeX = relativeX;
-  mesh.rotation.set(0, 0, 0);
-
-  if (wallName === 'back') {
-    mesh.position.set(relativeX, 0, -halfZ + wallOffset);
-    mesh.rotation.y = 0;
-  } else if (wallName === 'front') {
-    mesh.position.set(-relativeX, 0, halfZ - wallOffset);
-    mesh.rotation.y = Math.PI;
-  } else if (wallName === 'left') {
-    mesh.position.set(-halfX + wallOffset, 0, relativeX);
-    mesh.rotation.y = Math.PI / 2;
-  } else if (wallName === 'right') {
-    mesh.position.set(halfX - wallOffset, 0, -relativeX);
-    mesh.rotation.y = -Math.PI / 2;
-  }
-}
-
-export function createMeshObject(itemData) {
+export function createSpawnerGeometry(itemData) {
   const group = new THREE.Group();
 
   if (itemData.sku === "PN-BED-102") {
@@ -51,7 +14,8 @@ export function createMeshObject(itemData) {
     const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
     const wheelGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.06, 12);
     wheelGeo.rotateZ(Math.PI / 2);
-    [[0.55, 0.06, 0.9], [-0.55, 0.06, 0.9], [0.55, 0.06, -0.9], [-0.55, 0.06, -0.9]].forEach(pos => {
+    const wCoords = [[0.55, 0.06, 0.9], [-0.55, 0.06, 0.9], [0.55, 0.06, -0.9], [-0.55, 0.06, -0.9]];
+    wCoords.forEach(pos => {
       const w = new THREE.Mesh(wheelGeo, wheelMat);
       w.position.set(...pos);
       group.add(w);
@@ -92,7 +56,7 @@ export function createMeshObject(itemData) {
       group.add(fRail);
     });
 
-  } else if (itemData.sku?.startsWith("PN-IV")) {
+  } else if (itemData.sku === "PN-IV-201" || itemData.sku === "PN-IV-202" || itemData.label === "IV Pole") {
     const baseMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.3 });
     const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.08), baseMat);
     leg1.position.y = 0.02;
@@ -105,17 +69,22 @@ export function createMeshObject(itemData) {
     const wheelGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.04, 12);
     wheelGeo.rotateZ(Math.PI / 2);
     const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
-    [[0.25, 0.02, 0], [-0.25, 0.02, 0], [0, 0.02, 0.25], [0, 0.02, -0.25]].forEach(pos => {
+    const wheelCoords = [[0.25, 0.02, 0], [-0.25, 0.02, 0], [0, 0.02, 0.25], [0, 0.02, -0.25]];
+    
+    wheelCoords.forEach(pos => {
       const w = new THREE.Mesh(wheelGeo, wheelMat);
       w.position.set(...pos);
       group.add(w);
     });
 
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.6, 12), new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.6 }));
+    const pole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.025, 0.025, 1.6, 12),
+      new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.6, roughness: 0.2 })
+    );
     pole.position.y = 0.85;
     group.add(pole);
 
-    const hookMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
+    const hookMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 });
     for (let i = 0; i < 4; i++) {
       const hookGroup = new THREE.Group();
       hookGroup.rotation.y = (i * Math.PI) / 2;
@@ -132,10 +101,34 @@ export function createMeshObject(itemData) {
       group.add(hookGroup);
     }
 
+  } else if (itemData.label === "Patient Bed") {
+    const baseMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 0.15, 2.0),
+      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 })
+    );
+    baseMesh.position.y = 0.15;
+    group.add(baseMesh);
+
+    const mattressMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1.3, 0.25, 2.1),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.7 })
+    );
+    mattressMesh.position.y = 0.35;
+    group.add(mattressMesh);
+
+  } else if (itemData.label === "Medical Headwall") {
+    const panel = new THREE.Mesh(
+      new THREE.BoxGeometry(1.4, 0.4, 0.03),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 })
+    );
+    panel.position.set(0, 1.15, 0);
+    group.add(panel);
+
   } else {
-    const boxGeo = new THREE.BoxGeometry(itemData.dims[0], itemData.dims[1], itemData.dims[2]);
-    const boxMat = new THREE.MeshStandardMaterial({ color: itemData.color || 0x64748b, roughness: 0.5 });
-    const mesh = new THREE.Mesh(boxGeo, boxMat);
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(itemData.dims[0], itemData.dims[1], itemData.dims[2]),
+      new THREE.MeshStandardMaterial({ color: itemData.color || 0x64748b, roughness: 0.5 })
+    );
     mesh.position.y = itemData.dims[1] / 2;
     group.add(mesh);
   }
