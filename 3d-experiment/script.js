@@ -231,7 +231,6 @@ function updateRoomWalls() {
     side: THREE.DoubleSide 
   });
 
-  // All 4 walls created at full height (1.8), dynamically hidden/faded based on camera angle
   const backGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, fullHeight, wallThickness);
   const backWall = new THREE.Mesh(backGeo, createWallMaterial());
   backWall.position.set(0, fullHeight / 2, -halfZ - (wallThickness / 2));
@@ -285,7 +284,6 @@ function animate() {
   if (camera && Object.keys(wallsData).length > 0) {
     const cameraDir = new THREE.Vector3().subVectors(camera.position, new THREE.Vector3(0, 0, 0)).normalize();
 
-    // Dynamically make walls facing the camera transparent/disappear so interior items & headwalls are fully visible
     Object.values(wallsData).forEach(data => {
       const dot = cameraDir.dot(data.normal);
       const targetOpacity = dot > 0.1 ? 0.0 : 1.0; 
@@ -367,17 +365,17 @@ function spawn3DObject(itemData) {
     group.add(footBoard);
 
   } else if (itemData.label === "Medical Headwall") {
-    // Mounted high up on full walls, perfectly positioned above beds
-    const wallPanelGeo = new THREE.BoxGeometry(1.6, 1.2, 0.15);
+    // Corrected Y offset so the headwall panel starts directly above the bed mattress (y ~ 0.5 to 0.6) and extends upward
+    const wallPanelGeo = new THREE.BoxGeometry(1.6, 1.1, 0.15);
     const wallPanelMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.2 });
     const wallPanel = new THREE.Mesh(wallPanelGeo, wallPanelMat);
-    wallPanel.position.y = 1.1; 
+    wallPanel.position.y = 1.15; 
     group.add(wallPanel);
 
     const stripGeo = new THREE.BoxGeometry(1.5, 0.2, 0.05);
     const stripMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.4 });
     const strip = new THREE.Mesh(stripGeo, stripMat);
-    strip.position.set(0, 1.1, 0.08);
+    strip.position.set(0, 1.15, 0.08);
     group.add(strip);
 
     const outletGeo = new THREE.BoxGeometry(0.12, 0.08, 0.02);
@@ -386,7 +384,7 @@ function spawn3DObject(itemData) {
     for (let i = -1; i <= 1; i++) {
       const outletMat = new THREE.MeshStandardMaterial({ color: colors[i + 1] });
       const outlet = new THREE.Mesh(outletGeo, outletMat);
-      outlet.position.set(i * 0.35, 1.1, 0.11);
+      outlet.position.set(i * 0.35, 1.15, 0.11);
       group.add(outlet);
     }
 
@@ -459,6 +457,7 @@ if (clearBtn) {
   clearBtn.addEventListener('click', () => {
     if (scene) {
       spawnedObjects.forEach(obj => scene.remove(obj));
+      spawnedObjects.length =.0;
       spawnedObjects.length = 0;
     }
   });
