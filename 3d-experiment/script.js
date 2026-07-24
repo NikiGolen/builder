@@ -522,33 +522,47 @@ function load3DMenuCatalog() {
   if (!catalogList) return;
   catalogList.innerHTML = ''; 
 
-  config.items.forEach((catGroup) => {
-    // Create collapsible category header
+  config.items.forEach((catGroup, index) => {
     const header = document.createElement('div');
     header.className = 'catalog-category-header';
     header.textContent = catGroup.category;
     
-    // Container for items under this category
     const variantsContainer = document.createElement('div');
     variantsContainer.className = 'catalog-variants-container';
 
-    // Toggle collapse/expand action on header click
+    // Optional: Auto-expand the first category by default, keep others collapsed
+    if (index === 0) {
+      header.classList.add('is-expanded');
+      variantsContainer.classList.add('is-expanded');
+    }
+
     header.addEventListener('click', () => {
-      header.classList.toggle('collapsed');
-      variantsContainer.classList.toggle('collapsed');
+      header.classList.toggle('is-expanded');
+      variantsContainer.classList.toggle('is-expanded');
     });
 
     catGroup.variants.forEach((item) => {
       const card = document.createElement('div');
       card.className = 'catalog-item-card';
+      card.style.cssText = `
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      `;
+
       card.innerHTML = `
         <div class="item-info">
-          <strong style="font-size: 0.85rem; color: #0f172a;">${item.label}</strong>
-          <span class="item-sku">SKU: ${item.sku}</span>
-          <p class="item-desc">${item.sub}</p>
+          <strong style="font-size: 0.85rem; color: #0f172a; display: block;">${item.label}</strong>
+          <span class="item-sku" style="font-size: 0.75rem; color: #2563eb; font-family: monospace;">SKU: ${item.sku}</span>
+          <p class="item-desc" style="font-size: 0.75rem; color: #64748b; margin: 4px 0 0 0;">${item.sub}</p>
         </div>
-        <button class="spawn-action-btn">Spawn Item ➕</button>
+        <button class="spawn-action-btn" style="background: #1e293b; color: #ffffff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 4px;">Spawn Item ➕</button>
       `;
+
       card.querySelector('.spawn-action-btn').addEventListener('click', () => spawn3DObject(item));
       variantsContainer.appendChild(card);
     });
@@ -557,7 +571,6 @@ function load3DMenuCatalog() {
     catalogList.appendChild(variantsContainer);
   });
 }
-
 function spawn3DObject(itemData) {
   if (!scene) return;
   const group = createSpawnerGeometry(itemData);
