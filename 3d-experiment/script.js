@@ -15,35 +15,14 @@ const catalogs = {
     headline: "Template Workspace: Medical-Surgical Ward Simulation",
     themeClass: "medsurg-theme",
     items: [
-      {
-        category: "Patient Beds",
-        variants: [
-          { label: "Patient Bed", sku: "PN-BED-101", sub: "Multi-position electric model", bg: "#e0f2fe", dims: [1.4, 0.7, 2.2], color: 0x0284c7 },
-          { label: "Hill-Rom Advanced Care Bed", sku: "PN-BED-102", sub: "Full electric with scale & exit alarm", bg: "#e0f2fe", dims: [1.4, 0.7, 2.2], color: 0x1d4ed8 }
-        ]
-      },
-      {
-        category: "Infusion & Support",
-        variants: [
-          { label: "IV Pole", sku: "PN-IV-201", sub: "Mobile rolling infusion stand", bg: "#dcfce7", dims: [0.6, 1.8, 0.6], color: 0x64748b },
-          { label: "Heavy-Duty Dual IV Pole", sku: "PN-IV-202", sub: "4-leg weighted base, 2 hooks", bg: "#dcfce7", dims: [0.6, 1.8, 0.6], color: 0x475569 }
-        ]
-      },
-      {
-        category: "Overbed Tables",
-        variants: [
-          { label: "Overbed Table", sku: "PN-TBL-301", sub: "C-base rolling medical tray", bg: "#fef3c7", dims: [1.0, 0.9, 0.5], color: 0xd97706 },
-          { label: "Bariatric Split-Top Table", sku: "PN-TBL-302", sub: "Extra-wide heavy-duty base", bg: "#fef3c7", dims: [1.2, 0.9, 0.6], color: 0xb45309 }
-        ]
-      },
-      {
-        category: "Wall & Infrastructure",
-        variants: [
-          { label: "Medical Headwall", sku: "PN-HW-401", sub: "Integrated gas & electrical panel", bg: "#f8fafc", dims: [1.4, 0.4, 0.04], color: 0xf8fafc, isWallItem: true },
-          { label: "Bio-Waste", sku: "PN-BIO-501", sub: "Regulated wall sharp box", bg: "#fee2e2", dims: [0.4, 0.5, 0.3], color: 0xdc2626, isWallItem: true },
-          { label: "Anatomical Poster", sku: "PN-POS-601", sub: "Skeletal system educational chart", bg: "#fef08a", dims: [1.0, 1.2, 0.02], color: 0xfffbeb, isWallItem: true }
-        ]
-      }
+      { label: "Patient Bed", icon: "🛏️", sub: "Multi-position electric model", bg: "#e0f2fe", dims: [1.4, 0.7, 2.2], color: 0x0284c7 },
+      { label: "Medical Headwall", icon: "🔌", sub: "Integrated gas & electrical panel", bg: "#e0f2fe", dims: [1.4, 0.4, 0.04], color: 0xf8fafc, isWallItem: true },
+      { label: "Anatomical Poster", icon: "🖼️", sub: "Skeletal system educational chart", bg: "#fef08a", dims: [1.0, 1.2, 0.02], color: 0xfffbeb, isWallItem: true },
+      { label: "Bedside Cabinet", icon: "🗄️", sub: "Rolling 3-drawer bedside unit", bg: "#fef3c7", dims: [0.6, 0.8, 0.6], color: 0xd97706 },
+      { label: "Adult Manikin", icon: "🧍", sub: "High-Fidelity Patient Simulator", bg: "#f1f5f9", dims: [0.6, 0.4, 1.8], color: 0x64748b },
+      { label: "IV Pole", icon: "⚗️", sub: "Mobile rolling infusion stand", bg: "#dcfce7", dims: [0.6, 1.8, 0.6], color: 0x64748b },
+      { label: "Overbed Table", icon: "🪵", sub: "C-base rolling medical tray", bg: "#fef3c7", dims: [1.0, 0.9, 0.5], color: 0xd97706 },
+      { label: "Bio-Waste", icon: "🟥", sub: "Regulated wall sharp box", bg: "#fee2e2", dims: [0.4, 0.5, 0.3], color: 0xdc2626, isWallItem: true }
     ]
   },
   pharmacy: {
@@ -52,21 +31,11 @@ const catalogs = {
     headline: "Template Workspace: Institutional Pharmacy Simulation",
     themeClass: "pharmacy-theme",
     items: [
-      {
-        category: "Compounding & Storage",
-        variants: [
-          { label: "Laminar Hood", sku: "PN-PH-101", sub: "Sterile compounding workbench", bg: "#ccfbf1", dims: [1.8, 2.0, 0.9], color: 0x0d9488 },
-          { label: "Medication Cart", sku: "PN-PH-102", sub: "Locking rolling unit dose cart", bg: "#f1f5f9", dims: [1.0, 1.1, 0.7], color: 0x475569 },
-          { label: "Supply Shelving", sku: "PN-PH-103", sub: "Heavy-duty bulk storage rack", bg: "#f5f5f4", dims: [2.0, 2.2, 0.6], color: 0x78716c }
-        ]
-      },
-      {
-        category: "Dispensary & Checkout",
-        variants: [
-          { label: "POS Register", sku: "PN-PH-201", sub: "Outpatient retail checkout terminal", bg: "#e0f2fe", dims: [0.8, 1.0, 0.8], color: 0x2563eb },
-          { label: "Pill Counter", sku: "PN-PH-202", sub: "Digital automatic counting tray", bg: "#fef9c3", dims: [0.8, 0.3, 0.8], color: 0xca8a04 }
-        ]
-      }
+      { label: "Laminar Hood", icon: "🌬️", sub: "Sterile compounding workbench", bg: "#ccfbf1", dims: [1.8, 2.0, 0.9], color: 0x0d9488 },
+      { label: "Medication Cart", icon: "🛒", sub: "Locking rolling unit dose cart", bg: "#f1f5f9", dims: [1.0, 1.1, 0.7], color: 0x475569 },
+      { label: "Supply Shelving", icon: "🗄️", sub: "Heavy-duty bulk storage rack", bg: "#f5f5f4", dims: [2.0, 2.2, 0.6], color: 0x78716c },
+      { label: "POS Register", icon: "💻", sub: "Outpatient retail checkout terminal", bg: "#e0f2fe", dims: [0.8, 1.0, 0.8], color: 0x2563eb },
+      { label: "Pill Counter", icon: "🔢", sub: "Digital automatic counting tray", bg: "#fef9c3", dims: [0.8, 0.3, 0.8], color: 0xca8a04 }
     ]
   }
 };
@@ -115,13 +84,18 @@ function initializeWorkspace(type) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Broadened selector to support different class names or direct elements wrapping the choice options
   const choiceButtons = document.querySelectorAll('.choice-btn, [id*="medsurg"], [id*="pharmacy"], .room-choice, #welcome-screen div[style*="cursor"], #welcome-screen img, #welcome-screen button, .welcome-card, div > strong');
+  
+  // Fallback direct attachment if specific buttons aren't matched by class name
+  const cards = document.querySelectorAll('#welcome-screen > div > div > div, #welcome-screen .choice-btn, #welcome-screen [class*="card"]');
   
   if (choiceButtons.length >= 2) {
     choiceButtons[0].addEventListener('click', () => initializeWorkspace('medsurg'));
     choiceButtons[1].addEventListener('click', () => initializeWorkspace('pharmacy'));
   }
 
+  // Also bind click handlers directly to the choice cards inside the welcome screen container
   const welcomeContainer = document.getElementById('welcome-screen');
   if (welcomeContainer) {
     welcomeContainer.addEventListener('click', (e) => {
@@ -134,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Keyboard listener for deletion (Backspace / Delete) & Rotation (R key)
   window.addEventListener('keydown', (e) => {
     if (!selectedMesh) return;
     if (e.key === 'r' || e.key === 'R') {
@@ -142,34 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
       removeSelectedItem();
     }
   });
-
-  if (clearBtn) {
-    clearBtn.addEventListener('click', () => {
-      spawnedObjects.forEach(obj => scene.remove(obj));
-      spawnedObjects.length = 0;
-      selectedMesh = null;
-      if (haloMesh) haloMesh.visible = false;
-      if (actionOverlay) actionOverlay.style.display = 'none';
-    });
-  }
-
-  if (changeRoomBtn) {
-    changeRoomBtn.addEventListener('click', () => {
-      if (welcomeScreen) {
-        welcomeScreen.classList.remove('hidden');
-        welcomeScreen.style.opacity = '1';
-        welcomeScreen.style.visibility = 'visible';
-        welcomeScreen.style.pointerEvents = 'auto';
-        welcomeScreen.style.display = 'flex';
-      }
-    });
-  }
-
-  if (sizeSelect) {
-    sizeSelect.addEventListener('change', () => {
-      updateRoomDimensions();
-    });
-  }
 
   createActionOverlayUI();
 });
@@ -341,6 +288,7 @@ function init3DSpace() {
   gridHelper.position.y = 0.01;
   scene.add(gridHelper);
 
+  // Create Selection Halo Mesh with depthWrite false so it stays visible through the transparent wall
   const haloGeo = new THREE.RingGeometry(0.8, 0.9, 32);
   haloGeo.rotateX(-Math.PI / 2);
   const haloMat = new THREE.MeshBasicMaterial({ 
@@ -380,7 +328,6 @@ function setupInteractionEvents(container) {
         obj = obj.parent;
       }
       selectedMesh = spawnedObjects.includes(obj) ? obj : hits[0].object;
-      updateHaloGeometry(selectedMesh);
       controls.enabled = false;
     } else {
       selectedMesh = null;
@@ -389,6 +336,7 @@ function setupInteractionEvents(container) {
     }
   });
 
+  // Double-click event to trigger floating action menu and halo display right above the clicked item
   container.addEventListener('dblclick', (e) => {
     const bounds = container.getBoundingClientRect();
     mouseVector.x = ((e.clientX - bounds.left) / container.clientWidth) * 2 - 1;
@@ -475,7 +423,6 @@ function attachToWall(mesh, wallName, relativeX) {
 
   mesh.userData.wallName = wallName;
   mesh.userData.relativeX = relativeX;
-  mesh.userData.isWallItem = true;
 
   mesh.rotation.set(0, 0, 0);
 
@@ -576,6 +523,7 @@ function animate() {
     });
   }
 
+  // Follow active selected item right above the object in 3D canvas space relative to the container element when selected/double-clicked
   if (selectedMesh && haloMesh && haloMesh.visible && actionOverlay) {
     const tempV = new THREE.Vector3();
     selectedMesh.getWorldPosition(tempV);
@@ -612,31 +560,23 @@ function load3DMenuCatalog() {
   if (!catalogList) return;
   catalogList.innerHTML = ''; 
 
-  config.items.forEach((catGroup) => {
-    const header = document.createElement('div');
-    header.className = 'catalog-category-header';
-    header.textContent = catGroup.category;
-    catalogList.appendChild(header);
-
-    catGroup.variants.forEach((item) => {
-      const card = document.createElement('div');
-      card.className = 'catalog-item-card';
-      
-      card.innerHTML = `
-        <div class="item-info">
-          <strong style="font-size: 0.85rem; color: #0f172a;">${item.label}</strong>
-          <span class="item-sku">SKU: ${item.sku}</span>
-          <p class="item-desc">${item.sub}</p>
-        </div>
-        <button class="spawn-action-btn">Spawn Item ➕</button>
-      `;
-      
-      card.querySelector('.spawn-action-btn').addEventListener('click', () => {
-        spawn3DObject(item);
-      });
-      
-      catalogList.appendChild(card);
+  config.items.forEach((item) => {
+    const btn = document.createElement('div');
+    btn.className = 'draggable-item';
+    btn.style.cursor = 'pointer'; 
+    
+    btn.innerHTML = `
+      <div class="item-icon" style="background: ${item.bg}; font-size: 1.25rem; padding: 8px; border-radius: 4px; display: inline-block;">${item.icon}</div>
+      <div style="display: inline-block; vertical-align: top; margin-left: 10px;">
+        <strong style="display: block; font-size: 0.9rem;">${item.label}</strong>
+        <p style="font-size: 0.75rem; color: #64748b; margin: 2px 0 0 0;">${item.sub}</p>
+      </div>
+    `;
+    
+    btn.addEventListener('click', () => {
+      spawn3DObject(item);
     });
+    catalogList.appendChild(btn);
   });
 }
 
@@ -855,15 +795,115 @@ function spawn3DObject(itemData) {
     const poleGeo = new THREE.CylinderGeometry(0.025, 0.025, 1.6, 12);
     const poleMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.6, roughness: 0.2 });
     const pole = new THREE.Mesh(poleGeo, poleMat);
-    pole.position.y = 0.82;
+    pole.position.y = 0.85;
     group.add(pole);
 
-    const hookGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.2, 8);
-    for (let i = 0; i < 2; i++) {
-      const hook = new THREE.Mesh(hookGeo, poleMat);
-      hook.position.set((i === 0 ? 0.06 : -0.06), 1.55, 0);
-      hook.rotation.z = (i === 0 ? -Math.PI / 6 : Math.PI / 6);
-      group.add(hook);
+    const topCollarGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.1, 12);
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.9, roughness: 0.1 });
+    const topCollar = new THREE.Mesh(topCollarGeo, chromeMat);
+    topCollar.position.y = 1.65;
+    group.add(topCollar);
+
+    for (let i = 0; i < 4; i++) {
+      const angle = (i * Math.PI) / 2;
+      const hookArmGeo = new THREE.BoxGeometry(0.15, 0.02, 0.02);
+      const hookArm = new THREE.Mesh(hookArmGeo, chromeMat);
+      hookArm.position.set(Math.cos(angle) * 0.07, 1.7, Math.sin(angle) * 0.07);
+      hookArm.rotation.y = -angle;
+      group.add(hookArm);
     }
+
+  } else {
+    const geometry = new THREE.BoxGeometry(itemData.dims[0], itemData.dims[1], itemData.dims[2]);
+    const material = new THREE.MeshStandardMaterial({ 
+      color: itemData.color, 
+      roughness: 0.5,
+      metalness: 0.1
+    });
+    const block = new THREE.Mesh(geometry, material);
+    block.position.y = itemData.dims[1] / 2;
+    group.add(block);
   }
+
+  group.userData.isWallItem = !!itemData.isWallItem;
+
+  if (group.userData.isWallItem) {
+    attachToWall(group, 'back', 0);
+  } else {
+    let placed = false;
+    let attempts = 0;
+    const sizeConfig = sizePresets[sizeSelect.value];
+    const maxX = (sizeConfig.floorScale.x / 2) - 1;
+    const maxZ = (sizeConfig.floorScale.z / 2) - 1;
+
+    while (!placed && attempts < 20) {
+      const candidateX = Math.round(((Math.random() - 0.5) * maxX * 1.5) / 0.5) * 0.5;
+      const candidateZ = Math.round(((Math.random() - 0.5) * maxZ * 1.5) / 0.5) * 0.5;
+      
+      let collision = false;
+      for (const existing of spawnedObjects) {
+        if (existing.userData.isWallItem) continue;
+        
+        const dist = Math.hypot(existing.position.x - candidateX, existing.position.z - candidateZ);
+        if (dist < 1.2) {
+          collision = true;
+          break;
+        }
+      }
+
+      if (!collision || attempts === 19) {
+        group.position.x = candidateX;
+        group.position.z = candidateZ;
+        placed = true;
+      }
+      attempts++;
+    }
+    group.position.y = 0;
+  }
+
+  scene.add(group);
+  spawnedObjects.push(group);
+  
+  selectedMesh = group;
+  updateHaloGeometry(selectedMesh);
 }
+
+// 9. Core Command Clear/Reset Triggers
+if (clearBtn) {
+  clearBtn.addEventListener('click', () => {
+    if (scene) {
+      spawnedObjects.forEach(obj => scene.remove(obj));
+      spawnedObjects.length = 0;
+      if (haloMesh) haloMesh.visible = false;
+      if (actionOverlay) actionOverlay.style.display = 'none';
+    }
+  });
+}
+
+if (changeRoomBtn) {
+  changeRoomBtn.addEventListener('click', () => {
+    if (welcomeScreen) {
+      welcomeScreen.style.display = 'flex';
+      welcomeScreen.classList.remove('hidden');
+      welcomeScreen.style.opacity = '1';
+      welcomeScreen.style.visibility = 'visible';
+      welcomeScreen.style.pointerEvents = 'auto';
+    }
+  });
+}
+
+if (sizeSelect) {
+  sizeSelect.addEventListener('change', updateRoomDimensions);
+}
+
+window.addEventListener('resize', () => {
+  const container = document.getElementById('blueprint-canvas');
+  if (!container || !camera || !renderer) return;
+  
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+  
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+});
