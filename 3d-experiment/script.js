@@ -16,7 +16,7 @@ const catalogs = {
     themeClass: "medsurg-theme",
     items: [
       { label: "Patient Bed", icon: "🛏️", sub: "Multi-position electric model", bg: "#e0f2fe", dims: [1.4, 0.7, 2.2], color: 0x0284c7 },
-      { label: "Medical Headwall", icon: "🔌", sub: "Integrated gas & electrical panel", bg: "#e0f2fe", dims: [1.6, 0.9, 0.3], color: 0x334155 },
+      { label: "Medical Headwall", icon: "🔌", sub: "Integrated gas & electrical panel", bg: "#e0f2fe", dims: [1.6, 1.4, 0.3], color: 0x334155 },
       { label: "Adult Manikin", icon: "🧍", sub: "High-Fidelity Patient Simulator", bg: "#f1f5f9", dims: [0.6, 0.4, 1.8], color: 0x64748b },
       { label: "IV Pump", icon: "⚗️", sub: "Dual-line medication pole", bg: "#dcfce7", dims: [0.8, 2.0, 0.8], color: 0x22c55e },
       { label: "Overbed Table", icon: "🪵", sub: "Height-adjustable tray", bg: "#fef3c7", dims: [1.0, 0.9, 0.5], color: 0xd97706 },
@@ -212,7 +212,7 @@ function setupInteractionEvents(container) {
   });
 }
 
-// 6. Sizing & Dynamic Sims-Style Wall Fading Modifiers (Lowered wall height to 0.8)
+// 6. Sizing & Dynamic Wall Fading Modifiers (Back wall full height at 1.8, side/front walls lower at 0.8)
 function updateRoomWalls() {
   Object.values(wallsData).forEach(data => scene.remove(data.mesh));
   wallsData = {};
@@ -220,36 +220,41 @@ function updateRoomWalls() {
   const sizeConfig = sizePresets[sizeSelect.value];
   const halfX = sizeConfig.floorScale.x / 2;
   const halfZ = sizeConfig.floorScale.z / 2;
-  const wallHeight = 0.8; // Proportionately lower walls so furniture looks balanced
   const wallThickness = 0.2;
 
-  const createWallMaterial = () => new THREE.MeshStandardMaterial({ 
+  const createWallMaterial = (opacityVal = 1.0) => new THREE.MeshStandardMaterial({ 
     color: 0xf1f5f9, 
     roughness: 0.9,
     transparent: true,
-    opacity: 1.0,
+    opacity: opacityVal,
     side: THREE.DoubleSide 
   });
 
-  const backGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, wallHeight, wallThickness);
-  const backWall = new THREE.Mesh(backGeo, createWallMaterial());
-  backWall.position.set(0, wallHeight / 2, -halfZ - (wallThickness / 2));
+  // Back wall: Full height (1.8) so headwalls look completely natural mounted against it
+  const backHeight = 1.8;
+  const backGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, backHeight, wallThickness);
+  const backWall = new THREE.Mesh(backGeo, createWallMaterial(1.0));
+  backWall.position.set(0, backHeight / 2, -halfZ - (wallThickness / 2));
   scene.add(backWall);
-  wallsData.back = { mesh: backWall, normal: new THREE.Vector3(0, 0, -1) };
+  wallsData.back = { mesh: backWall, normal: new THREE.Vector3(0, 0, -1), isBack: true };
 
-  const frontWall = new THREE.Mesh(backGeo, createWallMaterial());
-  frontWall.position.set(0, wallHeight / 2, halfZ + (wallThickness / 2));
+  // Side and Front walls: Lower height (0.8) for easy viewing
+  const lowHeight = 0.8;
+
+  const frontGeo = new THREE.BoxGeometry(sizeConfig.floorScale.x, lowHeight, wallThickness);
+  const frontWall = new THREE.Mesh(frontGeo, createWallMaterial());
+  frontWall.position.set(0, lowHeight / 2, halfZ + (wallThickness / 2));
   scene.add(frontWall);
   wallsData.front = { mesh: frontWall, normal: new THREE.Vector3(0, 0, 1) };
 
-  const sideGeo = new THREE.BoxGeometry(wallThickness, wallHeight, sizeConfig.floorScale.z);
+  const sideGeo = new THREE.BoxGeometry(wallThickness, lowHeight, sizeConfig.floorScale.z);
   const leftWall = new THREE.Mesh(sideGeo, createWallMaterial());
-  leftWall.position.set(-halfX - (wallThickness / 2), wallHeight / 2, 0);
+  leftWall.position.set(-halfX - (wallThickness / 2), lowHeight / 2, 0);
   scene.add(leftWall);
   wallsData.left = { mesh: leftWall, normal: new THREE.Vector3(-1, 0, 0) };
 
   const rightWall = new THREE.Mesh(sideGeo, createWallMaterial());
-  rightWall.position.set(halfX + (wallThickness / 2), wallHeight / 2, 0);
+  rightWall.position.set(halfX + (wallThickness / 2), lowHeight / 2, 0);
   scene.add(rightWall);
   wallsData.right = { mesh: rightWall, normal: new THREE.Vector3(1, 0, 0) };
 }
@@ -284,6 +289,8 @@ function animate() {
     const cameraDir = new THREE.Vector3().subVectors(camera.position, new THREE.Vector3(0, 0, 0)).normalize();
 
     Object.values(wallsData).forEach(data => {
+      if (data.isBack) return; // Keep back wall fully solid and visible so headwalls look great
+
       const dot = cameraDir.dot(data.normal);
       const targetOpacity = dot > 0.15 ? 0.12 : 1.0; 
       
@@ -334,7 +341,6 @@ function spawn3DObject(itemData) {
   const group = new THREE.Group();
 
   if (itemData.label === "Patient Bed") {
-    // Lowered profile scale for the bed to fit the room height perfectly
     const baseGeo = new THREE.BoxGeometry(1.2, 0.15, 2.0);
     const frameMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 });
     const baseMesh = new THREE.Mesh(baseGeo, frameMat);
@@ -365,18 +371,18 @@ function spawn3DObject(itemData) {
     group.add(footBoard);
 
   } else if (itemData.label === "Medical Headwall") {
-    // Realistic clinical headwall model with vertical utility trunk and rail modules
-    const wallPanelGeo = new THREE.BoxGeometry(1.6, 0.7, 0.15);
+    // True clinical headwall scaled to mount properly on the full-height back wall above beds
+    const wallPanelGeo = new THREE.BoxGeometry(1.6, 1.2, 0.15);
     const wallPanelMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.2 });
     const wallPanel = new THREE.Mesh(wallPanelGeo, wallPanelMat);
-    wallPanel.position.y = 0.5;
+    wallPanel.position.y = 0.9; // Positioned higher up so it sits directly above the bed level
     group.add(wallPanel);
 
     // Integrated medical gas/electrical service strip
-    const stripGeo = new THREE.BoxGeometry(1.5, 0.15, 0.05);
+    const stripGeo = new THREE.BoxGeometry(1.5, 0.2, 0.05);
     const stripMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.4 });
     const strip = new THREE.Mesh(stripGeo, stripMat);
-    strip.position.set(0, 0.5, 0.08);
+    strip.position.set(0, 0.9, 0.08);
     group.add(strip);
 
     // Color-coded medical gas outlet plugs (Oxygen, Vacuum, Medical Air)
@@ -386,7 +392,7 @@ function spawn3DObject(itemData) {
     for (let i = -1; i <= 1; i++) {
       const outletMat = new THREE.MeshStandardMaterial({ color: colors[i + 1] });
       const outlet = new THREE.Mesh(outletGeo, outletMat);
-      outlet.position.set(i * 0.35, 0.5, 0.11);
+      outlet.position.set(i * 0.35, 0.9, 0.11);
       group.add(outlet);
     }
 
