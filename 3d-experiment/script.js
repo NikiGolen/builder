@@ -232,11 +232,18 @@ function init3DSpace() {
   gridHelper.position.y = 0.01;
   scene.add(gridHelper);
 
-  // Create Selection Halo Mesh
+  // Create Selection Halo Mesh with depthWrite false so it stays visible through the transparent wall
   const haloGeo = new THREE.RingGeometry(0.8, 0.9, 32);
   haloGeo.rotateX(-Math.PI / 2);
-  const haloMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+  const haloMat = new THREE.MeshBasicMaterial({ 
+    color: 0x3b82f6, 
+    side: THREE.DoubleSide, 
+    transparent: true, 
+    opacity: 0.9,
+    depthWrite: false 
+  });
   haloMesh = new THREE.Mesh(haloGeo, haloMat);
+  haloMesh.renderOrder = 999;
   haloMesh.visible = false;
   scene.add(haloMesh);
 
@@ -428,10 +435,13 @@ function animate() {
 
     Object.values(wallsData).forEach(data => {
       const dot = cameraDir.dot(data.normal);
-      const targetOpacity = dot > 0.1 ? 0.0 : 1.0; 
+      // Fade out walls facing away from camera or viewed from behind
+      const targetOpacity = dot > 0.05 ? 0.0 : 1.0; 
       
       data.mesh.material.opacity += (targetOpacity - data.mesh.material.opacity) * 0.15;
       data.mesh.material.transparent = true;
+      // Ensure hidden walls don't block mouse raycasting clicks or occlusion
+      data.mesh.visible = data.mesh.material.opacity > 0.05;
     });
   }
 
@@ -573,27 +583,23 @@ function spawn3DObject(itemData) {
     group.add(skull);
 
   } else if (itemData.label === "Bio-Waste") {
-    // Wall Mount Bracket / Backing Plate
     const mountGeo = new THREE.BoxGeometry(0.35, 0.45, 0.02);
     const mountMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
     const mountPlate = new THREE.Mesh(mountGeo, mountMat);
     mountPlate.position.set(0, 1.1, 0.01);
     group.add(mountPlate);
 
-    // Bottom Shelf Support
     const shelfGeo = new THREE.BoxGeometry(0.38, 0.02, 0.28);
     const shelf = new THREE.Mesh(shelfGeo, mountMat);
     shelf.position.set(0, 0.88, 0.13);
     group.add(shelf);
 
-    // Red Sharps Container Body
     const binGeo = new THREE.BoxGeometry(0.32, 0.38, 0.24);
     const binMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4 });
     const bin = new THREE.Mesh(binGeo, binMat);
     bin.position.set(0, 1.09, 0.13);
     group.add(bin);
 
-    // Hazard Sticker Label on Front
     const labelGeo = new THREE.PlaneGeometry(0.18, 0.22);
     const canvasLabel = document.createElement('canvas');
     canvasLabel.width = 256;
@@ -615,7 +621,6 @@ function spawn3DObject(itemData) {
     sticker.position.set(0, 1.1, 0.252);
     group.add(sticker);
 
-    // Translucent Plastic Lid
     const lidBaseGeo = new THREE.BoxGeometry(0.34, 0.04, 0.26);
     const lidMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, transparent: true, opacity: 0.7 });
     const lidBase = new THREE.Mesh(lidBaseGeo, lidMat);
@@ -627,7 +632,6 @@ function spawn3DObject(itemData) {
     lidTop.position.set(0, 1.35, 0.13);
     group.add(lidTop);
 
-    // Securing Black Strap Wrapping Around Container
     const strapGeo = new THREE.BoxGeometry(0.34, 0.06, 0.26);
     const strapMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
     const strap = new THREE.Mesh(strapGeo, strapMat);
@@ -779,7 +783,6 @@ function spawn3DObject(itemData) {
   scene.add(group);
   spawnedObjects.push(group);
   
-  // Select newly spawned item automatically
   selectedMesh = group;
   updateHaloGeometry(selectedMesh);
 }
@@ -797,12 +800,14 @@ if (clearBtn) {
 }
 
 if (changeRoomBtn) {
+  changeRoomBtn.items?.forEach = ...
   changeRoomBtn.addEventListener('click', () => {
     if (welcomeScreen) {
       welcomeScreen.style.display = 'flex';
       welcomeScreen.classList.remove('hidden');
       welcomeScreen.style.opacity = '1';
       welcomeScreen.style.visibility = 'visible';
+      welcomeScreen.style.pointerEvents = 'none'; // wait, keep pointerEvents auto
       welcomeScreen.style.pointerEvents = 'auto';
     }
   });
