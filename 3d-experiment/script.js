@@ -64,7 +64,7 @@ let planeIntersectionPoint = new THREE.Vector3();
 let selectedMesh = null;
 const routingPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
-// UI Overlays for Selection Halo and Rotation/Delete Actions
+// UI Overlays for Selection Halo and Modern Sleek Floating Action Bar
 let actionOverlay = null;
 let haloMesh = null;
 
@@ -105,28 +105,66 @@ document.addEventListener('DOMContentLoaded', () => {
 function createActionOverlayUI() {
   actionOverlay = document.createElement('div');
   actionOverlay.id = 'item-action-overlay';
-  actionOverlay.style.position = 'absolute';
-  actionOverlay.style.display = 'none';
-  actionOverlay.style.background = 'rgba(15, 23, 42, 0.9)';
-  actionOverlay.style.padding = '6px 10px';
-  actionOverlay.style.borderRadius = '8px';
-  actionOverlay.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-  actionOverlay.style.zIndex = '100';
-  actionOverlay.style.gap = '8px';
-  actionOverlay.style.alignItems = 'center';
+  // Modern, sleek floating action bar styling with backdrop blur and smooth shadow
+  actionOverlay.style.cssText = `
+    position: absolute;
+    display: none;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 4px;
+    border-radius: 9999px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    z-index: 100;
+    gap: 4px;
+    align-items: center;
+    pointer-events: auto;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  `;
+  
   actionOverlay.innerHTML = `
-    <button id="overlay-rotate" style="background:#3b82f6; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:4px;">🔄 Rotate 90°</button>
-    <button id="overlay-delete" style="background:#ef4444; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:12px;">Delete</button>
+    <button id="overlay-rotate" title="Rotate 90°" style="
+      background: transparent; 
+      color: #f8fafc; 
+      border: none; 
+      width: 34px; 
+      height: 34px; 
+      border-radius: 50%; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 16px; 
+      transition: background 0.15s ease, transform 0.15s ease;
+    " onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='transparent'">🔄</button>
+    <div style="width: 1px; height: 18px; background: rgba(255,255,255,0.2); margin: 0 2px;"></div>
+    <button id="overlay-delete" title="Delete Item" style="
+      background: transparent; 
+      color: #f87171; 
+      border: none; 
+      width: 34px; 
+      height: 34px; 
+      border-radius: 50%; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 16px; 
+      transition: background 0.15s ease, transform 0.15s ease;
+    " onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='transparent'">🗑️</button>
   `;
   document.body.appendChild(actionOverlay);
 
-  document.getElementById('overlay-rotate').addEventListener('click', () => {
+  document.getElementById('overlay-rotate').addEventListener('click', (e) => {
+    e.stopPropagation();
     if (selectedMesh) {
       performRotation(selectedMesh);
     }
   });
 
-  document.getElementById('overlay-delete').addEventListener('click', () => {
+  document.getElementById('overlay-delete').addEventListener('click', (e) => {
+    e.stopPropagation();
     removeSelectedItem();
   });
 }
@@ -257,6 +295,9 @@ function init3DSpace() {
 // 5. Interaction & Wall Dragging Logic
 function setupInteractionEvents(container) {
   container.addEventListener('pointerdown', (e) => {
+    // If clicking directly on the action overlay, do not process canvas deselection
+    if (actionOverlay && actionOverlay.contains(e.target)) return;
+
     const bounds = container.getBoundingClientRect();
     mouseVector.x = ((e.clientX - bounds.left) / container.clientWidth) * 2 - 1;
     mouseVector.y = -((e.clientY - bounds.top) / container.clientHeight) * 2 + 1;
@@ -435,20 +476,19 @@ function animate() {
 
     Object.values(wallsData).forEach(data => {
       const dot = cameraDir.dot(data.normal);
-      // Fade out walls facing away from camera or viewed from behind
       const targetOpacity = dot > 0.05 ? 0.0 : 1.0; 
       
       data.mesh.material.opacity += (targetOpacity - data.mesh.material.opacity) * 0.15;
       data.mesh.material.transparent = true;
-      // Ensure hidden walls don't block mouse raycasting clicks or occlusion
       data.mesh.visible = data.mesh.material.opacity > 0.05;
     });
   }
 
-  // Follow active selected item with floating action overlay and rotate arrow indicator
+  // Follow active selected item right above the object in 3D canvas space with sleek floating controls
   if (selectedMesh && actionOverlay) {
     const tempV = new THREE.Vector3();
     selectedMesh.getWorldPosition(tempV);
+    // Position directly above the item's top bounding boundary
     tempV.y += selectedMesh.userData.isWallItem ? 0.6 : 1.4;
     tempV.project(camera);
 
@@ -457,8 +497,8 @@ function animate() {
     const y = (tempV.y * -.5 + .5) * container.clientHeight;
 
     actionOverlay.style.display = 'flex';
-    actionOverlay.style.left = `${container.offsetLeft + x - 55}px`;
-    actionOverlay.style.top = `${container.offsetTop + y - 50}px`;
+    actionOverlay.style.left = `${container.offsetLeft + x - 40}px`;
+    actionOverlay.style.top = `${container.offsetTop + y - 46}px`;
   } else if (actionOverlay && !selectedMesh) {
     actionOverlay.style.display = 'none';
   }
@@ -800,14 +840,12 @@ if (clearBtn) {
 }
 
 if (changeRoomBtn) {
-  changeRoomBtn.items?.forEach = ...
   changeRoomBtn.addEventListener('click', () => {
     if (welcomeScreen) {
       welcomeScreen.style.display = 'flex';
       welcomeScreen.classList.remove('hidden');
       welcomeScreen.style.opacity = '1';
       welcomeScreen.style.visibility = 'visible';
-      welcomeScreen.style.pointerEvents = 'none'; // wait, keep pointerEvents auto
       welcomeScreen.style.pointerEvents = 'auto';
     }
   });
