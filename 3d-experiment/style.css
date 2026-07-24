@@ -517,19 +517,18 @@ body {
   transition: transform 0.2s ease;
 }
 
-.catalog-category-header.collapsed::after {
-  transform: rotate(-90deg);
+.catalog-category-header.is-expanded::after {
+  transform: rotate(-180deg);
 }
 
 .catalog-variants-container {
-  display: flex;
+  display: none; /* Hidden by default until expanded */
   flex-direction: column;
   gap: 8px;
   margin-top: 8px;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
+  margin-bottom: 8px;
 }
 
-.catalog-variants-container.collapsed {
-  display: none;
+.catalog-variants-container.is-expanded {
+  display: flex; /* Shown when expanded */
 }
