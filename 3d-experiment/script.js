@@ -947,3 +947,22 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
 });
+function updateInspectorPanel(selectedObject) {
+  if (!selectedObject || !selectedObject.userData.sku) return;
+  
+  // Show distinct identification badge
+  const statsPanel = document.querySelector('.stats-panel');
+  statsPanel.innerHTML = `
+    <div class="stat-badge">Selected: <span>${selectedObject.userData.label}</span></div>
+    <div class="stat-badge">SKU: <span style="color:#2563eb;">${selectedObject.userData.sku}</span></div>
+    ${selectedObject.userData.animParts ? `<button id="animate-bed-btn" class="toolbar-btn" style="background:#0284c7; color:white; padding:2px 8px; font-size:0.7rem;">Toggle Fowler Position</button>` : ''}
+  `;
+
+  if (selectedObject.userData.animParts) {
+    document.getElementById('animate-bed-btn').addEventListener('click', () => {
+      const parts = selectedObject.userData.animParts;
+      // Toggle backrest rotation to simulate clinical bed articulation
+      parts.backrest.rotation.x = parts.backrest.rotation.x === 0 ? 0.45 : 0;
+    });
+  }
+}
