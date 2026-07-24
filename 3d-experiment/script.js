@@ -84,6 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
     choiceButtons[0].addEventListener('click', () => initializeWorkspace('medsurg'));
     choiceButtons[1].addEventListener('click', () => initializeWorkspace('pharmacy'));
   }
+
+  // Add global keyboard listener for rotation (R key)
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === 'r' || e.key === 'R') && selectedMesh) {
+      selectedMesh.rotation.y += Math.PI / 2;
+    }
+  });
 });
 
 // 4. Core Three.js Space Initialization Engine
@@ -370,7 +377,6 @@ function spawn3DObject(itemData) {
     const sizeConfig = sizePresets[sizeSelect.value];
     const halfZ = sizeConfig.floorScale.z / 2;
     
-    // Clean thin white panel without dark navy border blocks
     const panelGeo = new THREE.BoxGeometry(1.4, 0.4, 0.03);
     const panelMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
     const panel = new THREE.Mesh(panelGeo, panelMat);
@@ -397,30 +403,25 @@ function spawn3DObject(itemData) {
     const sizeConfig = sizePresets[sizeSelect.value];
     const halfZ = sizeConfig.floorScale.z / 2;
 
-    // Poster backing frame (resembling an anatomical chart)
     const posterGeo = new THREE.BoxGeometry(0.9, 1.1, 0.02);
     const posterMat = new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.5 });
     const poster = new THREE.Mesh(posterGeo, posterMat);
     poster.position.set(0, 1.35, -halfZ + 0.02);
     group.add(poster);
 
-    // Dark trim/frame
     const frameGeo = new THREE.BoxGeometry(0.94, 1.14, 0.01);
     const frameMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3 });
     const frame = new THREE.Mesh(frameGeo, frameMat);
     frame.position.set(0, 1.35, -halfZ + 0.01);
     group.add(frame);
 
-    // Simplified skeletal illustration bars/shapes on the poster
     const boneMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, roughness: 0.6 });
     
-    // Central skeleton pillar
     const spineGeo = new THREE.BoxGeometry(0.06, 0.7, 0.01);
     const spine = new THREE.Mesh(spineGeo, boneMat);
     spine.position.set(0, 1.35, -halfZ + 0.035);
     group.add(spine);
 
-    // Skull representation
     const skullGeo = new THREE.BoxGeometry(0.12, 0.16, 0.015);
     const skull = new THREE.Mesh(skullGeo, boneMat);
     skull.position.set(0, 1.7, -halfZ + 0.035);
@@ -532,7 +533,6 @@ function spawn3DObject(itemData) {
     group.add(block);
   }
 
-  // Position determination with overlap prevention (unless wall item)
   const sizeConfig = sizePresets[sizeSelect.value];
   if (itemData.isWallItem) {
     group.position.x = 0;
