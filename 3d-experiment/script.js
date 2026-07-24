@@ -17,9 +17,10 @@ const catalogs = {
     items: [
       { label: "Patient Bed", icon: "🛏️", sub: "Multi-position electric model", bg: "#e0f2fe", dims: [1.4, 0.7, 2.2], color: 0x0284c7 },
       { label: "Medical Headwall", icon: "🔌", sub: "Integrated gas & electrical panel", bg: "#e0f2fe", dims: [1.6, 1.4, 0.3], color: 0x334155 },
+      { label: "Bedside Cabinet", icon: "🗄️", sub: "Rolling 3-drawer bedside unit", bg: "#fef3c7", dims: [0.6, 0.8, 0.6], color: 0xd97706 },
       { label: "Adult Manikin", icon: "🧍", sub: "High-Fidelity Patient Simulator", bg: "#f1f5f9", dims: [0.6, 0.4, 1.8], color: 0x64748b },
       { label: "IV Pole", icon: "⚗️", sub: "Mobile rolling infusion stand", bg: "#dcfce7", dims: [0.6, 1.8, 0.6], color: 0x64748b },
-      { label: "Overbed Table", icon: "🪵", sub: "Height-adjustable tray", bg: "#fef3c7", dims: [1.0, 0.9, 0.5], color: 0xd97706 },
+      { label: "Overbed Table", icon: "🪵", sub: "C-base rolling medical tray", bg: "#fef3c7", dims: [1.0, 0.9, 0.5], color: 0xd97706 },
       { label: "Bio-Waste", icon: "🟥", sub: "Regulated wall sharp box", bg: "#fee2e2", dims: [0.4, 0.5, 0.3], color: 0xdc2626 }
     ]
   },
@@ -365,17 +366,19 @@ function spawn3DObject(itemData) {
     group.add(footBoard);
 
   } else if (itemData.label === "Medical Headwall") {
-    // Corrected Y offset so the headwall panel starts directly above the bed mattress (y ~ 0.5 to 0.6) and extends upward
-    const wallPanelGeo = new THREE.BoxGeometry(1.6, 1.1, 0.15);
+    const sizeConfig = sizePresets[sizeSelect.value];
+    const halfZ = sizeConfig.floorScale.z / 2;
+    
+    const wallPanelGeo = new THREE.BoxGeometry(1.6, 1.1, 0.08);
     const wallPanelMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.2 });
     const wallPanel = new THREE.Mesh(wallPanelGeo, wallPanelMat);
-    wallPanel.position.y = 1.15; 
+    wallPanel.position.set(0, 1.15, -halfZ + 0.04); 
     group.add(wallPanel);
 
-    const stripGeo = new THREE.BoxGeometry(1.5, 0.2, 0.05);
+    const stripGeo = new THREE.BoxGeometry(1.5, 0.2, 0.02);
     const stripMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.4 });
     const strip = new THREE.Mesh(stripGeo, stripMat);
-    strip.position.set(0, 1.15, 0.08);
+    strip.position.set(0, 1.15, -halfZ + 0.09);
     group.add(strip);
 
     const outletGeo = new THREE.BoxGeometry(0.12, 0.08, 0.02);
@@ -384,9 +387,68 @@ function spawn3DObject(itemData) {
     for (let i = -1; i <= 1; i++) {
       const outletMat = new THREE.MeshStandardMaterial({ color: colors[i + 1] });
       const outlet = new THREE.Mesh(outletGeo, outletMat);
-      outlet.position.set(i * 0.35, 1.15, 0.11);
+      outlet.position.set(i * 0.35, 1.15, -halfZ + 0.10);
       group.add(outlet);
     }
+
+  } else if (itemData.label === "Bedside Cabinet") {
+    // 3-drawer wood-finish bedside cabinet matching the reference photo style
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 });
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.4 });
+    const handleMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.8, roughness: 0.2 });
+
+    // Main cabinet body
+    const bodyGeo = new THREE.BoxGeometry(0.55, 0.75, 0.55);
+    const body = new THREE.Mesh(bodyGeo, woodMat);
+    body.position.y = 0.375;
+    group.add(body);
+
+    // 3 Drawer faces & handles stacked vertically
+    const drawerHeights = [0.2, 0.2, 0.22];
+    const drawerYPositions = [0.62, 0.38, 0.13];
+
+    drawerYPositions.forEach((yPos, i) => {
+      const faceGeo = new THREE.BoxGeometry(0.53, drawerHeights[i], 0.03);
+      const face = new THREE.Mesh(faceGeo, trimMat);
+      face.position.set(0, yPos, 0.28);
+      group.add(face);
+
+      // Handle
+      const handleGeo = new THREE.BoxGeometry(0.18, 0.02, 0.03);
+      const handle = new THREE.Mesh(handleGeo, handleMat);
+      handle.position.set(0, yPos, 0.305);
+      group.add(handle);
+    });
+
+  } else if (itemData.label === "Overbed Table") {
+    // C-base hospital overbed table with tray reaching halfway across the bed width
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.3 });
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.9, roughness: 0.1 });
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 });
+
+    // C-Base foot on the floor
+    const floorBaseGeo = new THREE.BoxGeometry(0.7, 0.06, 0.8);
+    const floorBase = new THREE.Mesh(floorBaseGeo, baseMat);
+    floorBase.position.set(-0.5, 0.03, 0);
+    group.add(floorBase);
+
+    // Vertical telescoping column
+    const columnGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.85, 12);
+    const column = new THREE.Mesh(columnGeo, chromeMat);
+    column.position.set(-0.75, 0.45, 0);
+    group.add(column);
+
+    // Cantilever arm supporting the tray halfway across
+    const armGeo = new THREE.BoxGeometry(0.8, 0.05, 0.15);
+    const arm = new THREE.Mesh(armGeo, chromeMat);
+    arm.position.set(-0.35, 0.85, 0);
+    group.add(arm);
+
+    // Tabletop tray reaching halfway over the bed center
+    const trayGeo = new THREE.BoxGeometry(0.7, 0.04, 0.9);
+    const tray = new THREE.Mesh(trayGeo, woodMat);
+    tray.position.set(0.1, 0.88, 0);
+    group.add(tray);
 
   } else if (itemData.label === "IV Pole") {
     const baseMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.3 });
@@ -444,9 +506,16 @@ function spawn3DObject(itemData) {
     group.add(block);
   }
 
-  group.position.x = (Math.random() - 0.5) * 2;
-  group.position.y = 0;
-  group.position.z = (Math.random() - 0.5) * 2;
+  if (itemData.label === "Medical Headwall") {
+    const sizeConfig = sizePresets[sizeSelect.value];
+    group.position.x = 0;
+    group.position.y = 0;
+    group.position.z = -(sizeConfig.floorScale.z / 2);
+  } else {
+    group.position.x = (Math.random() - 0.5) * 2;
+    group.position.y = 0;
+    group.position.z = (Math.random() - 0.5) * 2;
+  }
 
   scene.add(group);
   spawnedObjects.push(group);
@@ -457,7 +526,6 @@ if (clearBtn) {
   clearBtn.addEventListener('click', () => {
     if (scene) {
       spawnedObjects.forEach(obj => scene.remove(obj));
-      spawnedObjects.length =.0;
       spawnedObjects.length = 0;
     }
   });
