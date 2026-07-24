@@ -8,41 +8,40 @@ let activeType = 'medsurg';
 let activeRoomFootprint = 'medium'; 
 let spawnedObjects = [];
 
-// DOM Elements mapped to your exact HTML IDs
-let welcomeScreen, workspaceScreen, catalogList, sidebarTitle, sidebarDesc, activeRoomTitle, roomSizeSelect;
-
 document.addEventListener('DOMContentLoaded', () => {
-  welcomeScreen = document.getElementById('welcome-screen');
-  workspaceScreen = document.getElementById('workspace-screen');
-  catalogList = document.getElementById('catalog-list');
-  sidebarTitle = document.getElementById('sidebar-title');
-  sidebarDesc = document.getElementById('sidebar-desc');
-  activeRoomTitle = document.getElementById('active-room-title');
-  roomSizeSelect = document.getElementById('room-size-select');
+  console.log("DOM loaded. Wiring up Pocket Nurse SimLab...");
 
-  // Bind directly to your exact welcome buttons from index.html
+  const welcomeScreen = document.getElementById('welcome-screen');
+  const workspaceScreen = document.getElementById('workspace-screen'); // Note: in your HTML, this is actually the container wrapper elements inside .pn-main-grid-viewport
   const medsurgBtn = document.getElementById('choose-medsurg');
   const pharmacyBtn = document.getElementById('choose-pharmacy');
   const changeRoomBtn = document.getElementById('change-room');
+  const roomSizeSelect = document.getElementById('room-size-select');
 
   if (medsurgBtn) {
     medsurgBtn.addEventListener('click', () => {
+      console.log("Selected Med-Surg Lab");
       activeType = 'medsurg';
-      initializeWorkspace();
+      launchWorkspace();
     });
+  } else {
+    console.error("Missing element: #choose-medsurg");
   }
 
   if (pharmacyBtn) {
     pharmacyBtn.addEventListener('click', () => {
+      console.log("Selected Pharmacy Lab");
       activeType = 'pharmacy';
-      initializeWorkspace();
+      launchWorkspace();
     });
+  } else {
+    console.error("Missing element: #choose-pharmacy");
   }
 
   if (changeRoomBtn) {
     changeRoomBtn.addEventListener('click', () => {
-      if (workspaceScreen) workspaceScreen.style.display = 'none';
-      if (welcomeScreen) welcomeScreen.style.display = 'flex';
+      const welcomeEl = document.getElementById('welcome-screen');
+      if (welcomeEl) welcomeEl.classList.remove('hidden');
     });
   }
 
@@ -55,13 +54,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-function initializeWorkspace() {
-  if (welcomeScreen) welcomeScreen.style.display = 'none';
-  if (workspaceScreen) workspaceScreen.style.display = 'flex';
-  
+function launchWorkspace() {
+  // Use the .hidden class defined in your style.css (.dashboard-overlay.hidden)
+  const welcomeScreen = document.getElementById('welcome-screen');
+  if (welcomeScreen) {
+    welcomeScreen.classList.add('hidden');
+  }
+
   updateFootprintStats();
-  initThreeJS();
-  load3DMenuCatalog();
+  
+  // Give the DOM a tiny frame to breathe so container dimensions are computed before Three.js mounts
+  setTimeout(() => {
+    initThreeJS();
+    load3DMenuCatalog();
+  }, 50);
 }
 
 function updateFootprintStats() {
@@ -74,6 +80,11 @@ function updateFootprintStats() {
 
 function load3DMenuCatalog() {
   const config = catalogs[activeType];
+  const sidebarTitle = document.getElementById('sidebar-title');
+  const sidebarDesc = document.getElementById('sidebar-desc');
+  const activeRoomTitle = document.getElementById('active-room-title');
+  const catalogList = document.getElementById('catalog-list');
+
   if (sidebarTitle) sidebarTitle.textContent = config.title;
   if (sidebarDesc) sidebarDesc.textContent = config.desc;
   if (activeRoomTitle) activeRoomTitle.textContent = config.headline;
@@ -104,11 +115,11 @@ function load3DMenuCatalog() {
       card.className = 'catalog-item-card';
       card.innerHTML = `
         <div class="item-info">
-          <strong style="font-size: 0.85rem; color: #0f172a; display: block;">${item.label}</strong>
-          <span class="item-sku" style="font-size: 0.75rem; color: #2563eb; font-family: monospace;">SKU: ${item.sku}</span>
-          <p class="item-desc" style="font-size: 0.75rem; color: #64748b; margin: 4px 0 0 0;">${item.sub}</p>
+          <strong>${item.label}</strong>
+          <span class="item-sku">SKU: ${item.sku}</span>
+          <p class="item-desc">${item.sub}</p>
         </div>
-        <button class="spawn-action-btn" style="background: #1e293b; color: #ffffff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 500; margin-top: 6px;">Spawn Item ➕</button>
+        <button class="spawn-action-btn">Spawn Item ➕</button>
       `;
 
       card.querySelector('.spawn-action-btn').addEventListener('click', () => spawn3DObject(item));
@@ -121,9 +132,11 @@ function load3DMenuCatalog() {
 }
 
 function initThreeJS() {
-  // Target the exact canvas ID from your HTML: #blueprint-canvas
   const container = document.getElementById('blueprint-canvas');
-  if (!container) return;
+  if (!container) {
+    console.error("Target container #blueprint-canvas not found!");
+    return;
+  }
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf8fafc);
