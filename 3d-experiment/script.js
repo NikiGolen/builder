@@ -703,7 +703,7 @@ function spawn3DObject(itemData) {
 
   } else if (itemData.label === "Bedside Cabinet") {
     const woodMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 });
-    const trimMat = new THREE.MeshStandardMaterial({ color: 0ksb45309, roughness: 0.4 });
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.4 });
     const handleMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.8, roughness: 0.2 });
 
     const bodyGeo = new THREE.BoxGeometry(0.55, 0.75, 0.55);
