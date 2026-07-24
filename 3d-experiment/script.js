@@ -84,10 +84,28 @@ function initializeWorkspace(type) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const choiceButtons = document.querySelectorAll('.choice-btn');
+  // Broadened selector to support different class names or direct elements wrapping the choice options
+  const choiceButtons = document.querySelectorAll('.choice-btn, [id*="medsurg"], [id*="pharmacy"], .room-choice, #welcome-screen div[style*="cursor"], #welcome-screen img, #welcome-screen button, .welcome-card, div > strong');
+  
+  // Fallback direct attachment if specific buttons aren't matched by class name
+  const cards = document.querySelectorAll('#welcome-screen > div > div > div, #welcome-screen .choice-btn, #welcome-screen [class*="card"]');
+  
   if (choiceButtons.length >= 2) {
     choiceButtons[0].addEventListener('click', () => initializeWorkspace('medsurg'));
     choiceButtons[1].addEventListener('click', () => initializeWorkspace('pharmacy'));
+  }
+
+  // Also bind click handlers directly to the choice cards inside the welcome screen container
+  const welcomeContainer = document.getElementById('welcome-screen');
+  if (welcomeContainer) {
+    welcomeContainer.addEventListener('click', (e) => {
+      const targetCard = e.target.closest('div[style*="cursor"], div[class*="choice"], div');
+      if (targetCard && (targetCard.textContent.includes('Med-Surg') || targetCard.textContent.includes('Hospital'))) {
+        initializeWorkspace('medsurg');
+      } else if (targetCard && targetCard.textContent.includes('Pharmacy')) {
+        initializeWorkspace('pharmacy');
+      }
+    });
   }
 
   // Keyboard listener for deletion (Backspace / Delete) & Rotation (R key)
