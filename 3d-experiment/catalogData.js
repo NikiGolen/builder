@@ -69,6 +69,23 @@ export const catalogs = {
             isWallItem: false
           }
         ]
+      },
+      {
+        category: "Wall Infrastructure & Signage",
+        variants: [
+          {
+            label: "Standard Medical Headwall",
+            sku: "HW-MED-100",
+            sub: "Pre-plumbed clinical service panel with medical gas outlets",
+            isWallItem: true
+          },
+          {
+            label: "Anatomical Educational Poster",
+            sku: "PST-ANAT-202",
+            sub: "Vascular and skeletal system reference wall chart",
+            isWallItem: true
+          }
+        ]
       }
     ]
   },
