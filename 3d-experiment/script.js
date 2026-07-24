@@ -310,8 +310,30 @@ function setupInteractionEvents(container) {
         obj = obj.parent;
       }
       selectedMesh = spawnedObjects.includes(obj) ? obj : hits[0].object;
-      updateHaloGeometry(selectedMesh);
       controls.enabled = false;
+    } else {
+      selectedMesh = null;
+      if (haloMesh) haloMesh.visible = false;
+      if (actionOverlay) actionOverlay.style.display = 'none';
+    }
+  });
+
+  // Double-click event to trigger floating action menu and halo display right above the clicked item
+  container.addEventListener('dblclick', (e) => {
+    const bounds = container.getBoundingClientRect();
+    mouseVector.x = ((e.clientX - bounds.left) / container.clientWidth) * 2 - 1;
+    mouseVector.y = -((e.clientY - bounds.top) / container.clientHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouseVector, camera);
+    const hits = raycaster.intersectObjects(spawnedObjects, true);
+
+    if (hits.length > 0) {
+      let obj = hits[0].object;
+      while (obj.parent && obj.parent !== scene && !spawnedObjects.includes(obj)) {
+        obj = obj.parent;
+      }
+      selectedMesh = spawnedObjects.includes(obj) ? obj : hits[0].object;
+      updateHaloGeometry(selectedMesh);
     } else {
       selectedMesh = null;
       if (haloMesh) haloMesh.visible = false;
@@ -483,21 +505,24 @@ function animate() {
     });
   }
 
-  // Follow active selected item right above the object in 3D canvas space with sleek floating controls
-  if (selectedMesh && actionOverlay) {
+  // Follow active selected item right above the object in 3D canvas space relative to the container element when selected/double-clicked
+  if (selectedMesh && haloMesh && haloMesh.visible && actionOverlay) {
     const tempV = new THREE.Vector3();
     selectedMesh.getWorldPosition(tempV);
     tempV.y += selectedMesh.userData.isWallItem ? 0.6 : 1.4;
     tempV.project(camera);
 
     const container = document.getElementById('blueprint-canvas');
-    const x = (tempV.x *  .5 + .5) * container.clientWidth;
-    const y = (tempV.y * -.5 + .5) * container.clientHeight;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const x = (tempV.x *  .5 + .5) * rect.width;
+      const y = (tempV.y * -.5 + .5) * rect.height;
 
-    actionOverlay.style.display = 'flex';
-    actionOverlay.style.left = `${container.offsetLeft + x - 40}px`;
-    actionOverlay.style.top = `${container.offsetTop + y - 46}px`;
-  } else if (actionOverlay && !selectedMesh) {
+      actionOverlay.style.display = 'flex';
+      actionOverlay.style.left = `${rect.left + x - 40}px`;
+      actionOverlay.style.top = `${rect.top + y - 46}px`;
+    }
+  } else if (actionOverlay) {
     actionOverlay.style.display = 'none';
   }
 
@@ -678,7 +703,7 @@ function spawn3DObject(itemData) {
 
   } else if (itemData.label === "Bedside Cabinet") {
     const woodMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 });
-    const trimMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.4 });
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0ksb45309, roughness: 0.4 });
     const handleMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.8, roughness: 0.2 });
 
     const bodyGeo = new THREE.BoxGeometry(0.55, 0.75, 0.55);
