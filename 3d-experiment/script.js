@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     choiceButtons[1].addEventListener('click', () => initializeWorkspace('pharmacy'));
   }
 
-  // Add global keyboard listener for rotation (R key)
+  // Keyboard listener for rotation (R key)
   window.addEventListener('keydown', (e) => {
     if ((e.key === 'r' || e.key === 'R') && selectedMesh) {
       selectedMesh.rotation.y += Math.PI / 2;
@@ -101,7 +101,6 @@ function init3DSpace() {
 
   scene = new THREE.Scene();
 
-  // Procedural Marble Background Generator
   const canvasTex = document.createElement('canvas');
   canvasTex.width = 512;
   canvasTex.height = 512;
@@ -221,7 +220,7 @@ function setupInteractionEvents(container) {
   });
 }
 
-// 6. Dynamic View-Based Full-Height Walls & Camera-Facing Wall Disappearance
+// 6. Increased Wall Height (3.2 units tall for full room enclosure)
 function updateRoomWalls() {
   Object.values(wallsData).forEach(data => scene.remove(data.mesh));
   wallsData = {};
@@ -230,7 +229,7 @@ function updateRoomWalls() {
   const halfX = sizeConfig.floorScale.x / 2;
   const halfZ = sizeConfig.floorScale.z / 2;
   const wallThickness = 0.2;
-  const fullHeight = 1.8;
+  const fullHeight = 3.2; // Increased height so walls look fully proportioned
 
   const createWallMaterial = () => new THREE.MeshStandardMaterial({ 
     color: 0xf1f5f9, 
@@ -406,25 +405,25 @@ function spawn3DObject(itemData) {
     const posterGeo = new THREE.BoxGeometry(0.9, 1.1, 0.02);
     const posterMat = new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.5 });
     const poster = new THREE.Mesh(posterGeo, posterMat);
-    poster.position.set(0, 1.35, -halfZ + 0.02);
+    poster.position.set(0, 2.1, -halfZ + 0.02); // Positioned higher up on the wall (above headwall)
     group.add(poster);
 
     const frameGeo = new THREE.BoxGeometry(0.94, 1.14, 0.01);
     const frameMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3 });
     const frame = new THREE.Mesh(frameGeo, frameMat);
-    frame.position.set(0, 1.35, -halfZ + 0.01);
+    frame.position.set(0, 2.1, -halfZ + 0.01);
     group.add(frame);
 
     const boneMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, roughness: 0.6 });
     
     const spineGeo = new THREE.BoxGeometry(0.06, 0.7, 0.01);
     const spine = new THREE.Mesh(spineGeo, boneMat);
-    spine.position.set(0, 1.35, -halfZ + 0.035);
+    spine.position.set(0, 2.1, -halfZ + 0.035);
     group.add(spine);
 
     const skullGeo = new THREE.BoxGeometry(0.12, 0.16, 0.015);
     const skull = new THREE.Mesh(skullGeo, boneMat);
-    skull.position.set(0, 1.7, -halfZ + 0.035);
+    skull.position.set(0, 2.45, -halfZ + 0.035);
     group.add(skull);
 
   } else if (itemData.label === "Bedside Cabinet") {
