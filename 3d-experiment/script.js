@@ -1,8 +1,68 @@
-// script.js
 import * as THREE from 'three';
-import { sizePresets, catalogs } from './catalogData.js';
-import { createSpawnerGeometry } from './objectSpawners.js';
 
+// 1. CATALOG DATA (Originally inline)
+const sizePresets = {
+  small: { readout: "14ft x 10ft", area: "140 sq ft", floorScale: { x: 14, z: 10 } },
+  medium: { readout: "18ft x 13ft", area: "234 sq ft", floorScale: { x: 18, z: 13 } },
+  large: { readout: "24ft x 16ft", area: "384 sq ft", floorScale: { x: 24, z: 16 } }
+};
+
+const catalogs = {
+  medsurg: {
+    title: "Med-Surg Equipment",
+    desc: "Hospital beds, headwalls, and bedside monitors",
+    headline: "Med-Surg Hospital Room Sandbox",
+    items: [
+      {
+        category: "Patient Care Units",
+        variants: [
+          { label: "Standard ICU Headwall", sku: "PN-HW-101", sub: "Integrated medical gas rails & power strips", isWallItem: true },
+          { label: "Hillrom Hospital Bed", sku: "PN-BED-300", sub: "Full articulation motorized frame", isWallItem: false }
+        ]
+      },
+      {
+        category: "Monitoring & Diagnostics",
+        variants: [
+          { label: "Bedside Patient Monitor", sku: "PN-MON-55", sub: "Multi-parameter vital signs display", isWallItem: false }
+        ]
+      }
+    ]
+  },
+  pharmacy: {
+    title: "Pharmacy Lab Equipment",
+    desc: "Clean benches, compounding hoods, and medication carrels",
+    headline: "Pharmacy Simulation Lab Sandbox",
+    items: [
+      {
+        category: "Compounding Workstations",
+        variants: [
+          { label: "Laminar Flow Hood", sku: "PN-PH-800", sub: "HEPA filtered vertical airflow hood", isWallItem: true },
+          { label: "Stainless Steel Prep Table", sku: "PN-PH-201", sub: "Heavy duty chemical resistant top", isWallItem: false }
+        ]
+      }
+    ]
+  }
+};
+
+// 2. OBJECT SPAWNER GEOMETRY (Originally inline)
+function createSpawnerGeometry(itemData) {
+  const group = new THREE.Group();
+  
+  // Basic fallback box block geometry for items
+  const geom = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+  const mat = new THREE.MeshStandardMaterial({ 
+    color: itemData.isWallItem ? 0x0284c7 : 0x0f172a, 
+    roughness: 0.5 
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+  
+  return group;
+}
+
+// 3. MAIN APP CONTROLLER & THREE.JS INITIALIZATION
 let scene, camera, renderer;
 let activeType = 'medsurg'; 
 let activeRoomFootprint = 'medium'; 
