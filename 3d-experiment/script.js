@@ -1,3 +1,4 @@
+// script.js
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { sizePresets, catalogs } from './catalogData.js';
@@ -23,6 +24,7 @@ const raycaster = new THREE.Raycaster();
 const mouseVector = new THREE.Vector2();
 let planeIntersectionPoint = new THREE.Vector3();
 let selectedMesh = null;
+let isDragging = false;
 const routingPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
 let actionOverlay = null;
@@ -79,24 +81,23 @@ function createActionOverlayUI() {
   actionOverlay.style.cssText = `
     position: absolute;
     display: none;
-    background: rgba(15, 23, 42, 0.85);
+    background: rgba(15, 23, 42, 0.9);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    padding: 4px;
+    padding: 6px 10px;
     border-radius: 9999px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     z-index: 100;
-    gap: 4px;
+    gap: 8px;
     align-items: center;
     pointer-events: auto;
-    transition: opacity 0.2s ease, transform 0.2s ease;
   `;
   
   actionOverlay.innerHTML = `
-    <button id="overlay-rotate" title="Rotate 90°" style="background: transparent; color: #f8fafc; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px;">🔄</button>
-    <div style="width: 1px; height: 18px; background: rgba(255,255,255,0.2); margin: 0 2px;"></div>
-    <button id="overlay-delete" title="Delete Item" style="background: transparent; color: #f87171; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px;">🗑️</button>
+    <button id="overlay-rotate" title="Rotate 90°" style="background: transparent; color: #f8fafc; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px;">🔄</button>
+    <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.2);"></div>
+    <button id="overlay-delete" title="Delete Item" style="background: transparent; color: #f87171; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px;">🗑️</button>
   `;
   document.body.appendChild(actionOverlay);
 
@@ -228,38 +229,19 @@ function setupInteractionEvents(container) {
         obj = obj.parent;
       }
       selectedMesh = spawnedObjects.includes(obj) ? obj : hits[0].object;
-      controls.enabled = false;
-    } else {
-      selectedMesh = null;
-      if (haloMesh) haloMesh.visible = false;
-      if (actionOverlay) actionOverlay.style.display = 'none';
-    }
-  });
-
-  container.addEventListener('dblclick', (e) => {
-    const bounds = container.getBoundingClientRect();
-    mouseVector.x = ((e.clientX - bounds.left) / container.clientWidth) * 2 - 1;
-    mouseVector.y = -((e.clientY - bounds.top) / container.clientHeight) * 2 + 1;
-
-    raycaster.setFromCamera(mouseVector, camera);
-    const hits = raycaster.intersectObjects(spawnedObjects, true);
-
-    if (hits.length > 0) {
-      let obj = hits[0].object;
-      while (obj.parent && obj.parent !== scene && !spawnedObjects.includes(obj)) {
-        obj = obj.parent;
-      }
-      selectedMesh = spawnedObjects.includes(obj) ? obj : hits[0].object;
       updateHaloGeometry(selectedMesh);
+      isDragging = true;
+      controls.enabled = false; // Disable orbit controls only when dragging an item
     } else {
       selectedMesh = null;
       if (haloMesh) haloMesh.visible = false;
       if (actionOverlay) actionOverlay.style.display = 'none';
+      isDragging = false;
     }
   });
 
   container.addEventListener('pointermove', (e) => {
-    if (!selectedMesh) return;
+    if (!isDragging || !selectedMesh) return;
 
     const bounds = container.getBoundingClientRect();
     mouseVector.x = ((e.clientX - bounds.left) / container.clientWidth) * 2 - 1;
@@ -295,7 +277,7 @@ function setupInteractionEvents(container) {
   });
  
   window.addEventListener('pointerup', () => {
-    selectedMesh = null;
+    isDragging = false;
     if (controls) controls.enabled = true;
   });
 }
@@ -408,7 +390,8 @@ function animate() {
   if (selectedMesh && haloMesh && haloMesh.visible && actionOverlay) {
     const tempV = new THREE.Vector3();
     selectedMesh.getWorldPosition(tempV);
-    tempV.y += selectedMesh.userData.isWallItem ? 0.6 : 1.4;
+    // Lower projection offset so it stays closer to the item and inside the container viewport
+    tempV.y += selectedMesh.userData.isWallItem ? 0.4 : 0.8;
     tempV.project(camera);
 
     const container = document.getElementById('blueprint-canvas');
@@ -417,9 +400,13 @@ function animate() {
       const x = (tempV.x * .5 + .5) * rect.width;
       const y = (tempV.y * -.5 + .5) * rect.height;
 
+      // Keep overlay clamped inside canvas boundaries so it doesn't clip off screen
+      const clampedX = Math.max(rect.left + 30, Math.min(rect.right - 80, rect.left + x - 40));
+      const clampedY = Math.max(rect.top + 30, Math.min(rect.bottom - 40, rect.top + y - 20));
+
       actionOverlay.style.display = 'flex';
-      actionOverlay.style.left = `${rect.left + x - 40}px`;
-      actionOverlay.style.top = `${rect.top + y - 46}px`;
+      actionOverlay.style.left = `${clampedX}px`;
+      actionOverlay.style.top = `${clampedY}px`;
     }
   } else if (actionOverlay) {
     actionOverlay.style.display = 'none';
