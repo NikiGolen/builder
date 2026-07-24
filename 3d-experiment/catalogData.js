@@ -27,7 +27,7 @@ export const sizePresets = {
 export const catalogs = {
   medsurg: {
     title: "Med-Surg Catalog",
-    desc: "Simulated medical-surgical room equipment and furniture",
+    desc: "Simulated hospital room equipment and furniture",
     headline: "Medical-Surgical Simulation Lab",
     items: [
       {
@@ -44,6 +44,12 @@ export const catalogs = {
             sku: "04-50-5804P",
             sub: "Full electric with integrated staff controls and four rails",
             isWallItem: false
+          },
+          {
+            label: "CAREdge Electric Hospital Bed",
+            sku: "04-50-7688",
+            sub: "Advanced acute care simulation bed frame",
+            isWallItem: false
           }
         ]
       },
@@ -54,6 +60,12 @@ export const catalogs = {
             label: "Bed Socket Telescoping IV Pole",
             sku: "04-54-2101",
             sub: "Adjustable height aluminum tubing for bed sockets",
+            isWallItem: false
+          },
+          {
+            label: "Standard Non-Tilt Overbed Table",
+            sku: "04-50-1060P",
+            sub: "Light oak finish mobile overbed workspace",
             isWallItem: false
           }
         ]
@@ -72,6 +84,29 @@ export const catalogs = {
             label: "Automatic Dispensing Cabinet",
             sku: "PN-PHARM-301",
             sub: "Secure medication storage simulation unit",
+            isWallItem: false
+          },
+          {
+            label: "Pharmacy Workflow Workstation",
+            sku: "PN-PHARM-405",
+            sub: "Stainless steel prep counter with integrated locking bin storage",
+            isWallItem: false
+          }
+        ]
+      },
+      {
+        category: "Medication Prep & Safety",
+        variants: [
+          {
+            label: "Vertical Laminar Flow Hood",
+            sku: "PN-PHARM-810",
+            sub: "Clean bench simulation unit for compounding training",
+            isWallItem: false
+          },
+          {
+            label: "Demo Dose Medication Supply Kit",
+            sku: "PN-MED-900",
+            sub: "Assorted simulation vials and blister packs for student practice",
             isWallItem: false
           }
         ]
