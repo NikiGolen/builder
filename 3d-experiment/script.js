@@ -7,35 +7,38 @@ let scene, camera, renderer;
 let activeType = 'medsurg'; 
 let activeRoomFootprint = 'medium'; 
 let spawnedObjects = [];
-let selectedObject = null;
 
-// DOM Elements
-const welcomeScreen = document.getElementById('welcome-screen');
-const workspaceScreen = document.getElementById('workspace-screen');
-const catalogList = document.getElementById('catalog-list');
-const sidebarTitle = document.getElementById('sidebar-title');
-const sidebarDesc = document.getElementById('sidebar-desc');
-const activeRoomTitle = document.getElementById('active-room-title');
-const roomSizeSelector = document.getElementById('room-size-selector');
+// DOM Elements (Initialized inside DOMContentLoaded to ensure they exist)
+let welcomeScreen, workspaceScreen, catalogList, sidebarTitle, sidebarDesc, activeRoomTitle, roomSizeSelector;
 
-// Initialize Room Selection Triggers
-document.querySelectorAll('.room-card').forEach(card => {
-  card.addEventListener('click', () => {
-    activeType = card.getAttribute('data-room-type');
-    initializeWorkspace();
+document.addEventListener('DOMContentLoaded', () => {
+  welcomeScreen = document.getElementById('welcome-screen');
+  workspaceScreen = document.getElementById('workspace-screen');
+  catalogList = document.getElementById('catalog-list');
+  sidebarTitle = document.getElementById('sidebar-title');
+  sidebarDesc = document.getElementById('sidebar-desc');
+  activeRoomTitle = document.getElementById('active-room-title');
+  roomSizeSelector = document.getElementById('room-size-selector');
+
+  // Bind room selection cards safely
+  document.querySelectorAll('.room-card').forEach(card => {
+    card.addEventListener('click', () => {
+      activeType = card.getAttribute('data-room-type') || 'medsurg';
+      initializeWorkspace();
+    });
   });
+
+  if (roomSizeSelector) {
+    roomSizeSelector.addEventListener('change', (e) => {
+      activeRoomFootprint = e.target.value;
+      buildRoomEnvironment();
+    });
+  }
 });
 
-if (roomSizeSelector) {
-  roomSizeSelector.addEventListener('change', (e) => {
-    activeRoomFootprint = e.target.value;
-    buildRoomEnvironment();
-  });
-}
-
 function initializeWorkspace() {
-  welcomeScreen.style.display = 'none';
-  workspaceScreen.style.display = 'flex';
+  if (welcomeScreen) welcomeScreen.style.display = 'none';
+  if (workspaceScreen) workspaceScreen.style.display = 'flex';
   
   initThreeJS();
   load3DMenuCatalog();
@@ -100,7 +103,6 @@ function initThreeJS() {
   camera.position.set(0, 10, 14);
   camera.lookAt(0, 0, 0);
 
-  // Restore crisp high-DPI rendering and soft shadows
   renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -110,7 +112,6 @@ function initThreeJS() {
   container.innerHTML = '';
   container.appendChild(renderer.domElement);
 
-  // Lighting setup
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
   scene.add(ambientLight);
 
@@ -134,6 +135,7 @@ function initThreeJS() {
 }
 
 function buildRoomEnvironment() {
+  if (!scene) return;
   scene.children.slice().forEach(child => {
     if (child.userData && child.userData.isEnvironment) {
       scene.remove(child);
@@ -142,7 +144,6 @@ function buildRoomEnvironment() {
 
   const preset = sizePresets[activeRoomFootprint] || sizePresets.medium;
   
-  // Floor scaled properly to match sizing presets
   const floorGeo = new THREE.PlaneGeometry(preset.floorScale.x, preset.floorScale.z);
   const floorMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.8 });
   const floor = new THREE.Mesh(floorGeo, floorMat);
