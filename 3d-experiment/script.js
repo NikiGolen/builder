@@ -29,6 +29,7 @@ const routingPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
 let actionOverlay = null;
 let haloMesh = null;
+let placedItemsContainer = null;
 
 // Application Lifecycle Setup
 function initializeWorkspace(type) {
@@ -73,7 +74,103 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   createActionOverlayUI();
+  createPlacedItemsSidebar();
 });
+
+function createPlacedItemsSidebar() {
+  const sidebar = document.createElement('div');
+  sidebar.id = 'placed-items-sidebar';
+  sidebar.style.cssText = `
+    position: fixed;
+    right: 20px;
+    top: 100px;
+    width: 280px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 140px);
+    overflow: hidden;
+    font-family: inherit;
+  `;
+
+  sidebar.innerHTML = `
+    <div style="padding: 14px 16px; border-bottom: 1px solid #f1f5f9; background: #f8fafc;">
+      <h3 style="margin: 0; font-size: 0.95rem; font-weight: 600; color: #0f172a;">Placed Room Items</h3>
+      <span style="font-size: 0.75rem; color: #64748b;">Manage added simulation equipment</span>
+    </div>
+    <div id="placed-items-list" style="overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+      <div style="text-align: center; color: #94a3b8; font-size: 0.8rem; padding: 20px 0;">No items added yet</div>
+    </div>
+  `;
+  document.body.appendChild(sidebar);
+  placedItemsContainer = document.getElementById('placed-items-list');
+}
+
+function updatePlacedItemsUI() {
+  if (!placedItemsContainer) return;
+
+  if (spawnedObjects.length === 0) {
+    placedItemsContainer.innerHTML = `<div style="text-align: center; color: #94a3b8; font-size: 0.8rem; padding: 20px 0;">No items added yet</div>`;
+    return;
+  }
+
+  placedItemsContainer.innerHTML = '';
+  spawnedObjects.forEach((obj, index) => {
+    const isSelected = obj === selectedMesh;
+    const itemCard = document.createElement('div');
+    itemCard.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: ${isSelected ? '#eff6ff' : '#f8fafc'};
+      border: 1px solid ${isSelected ? '#3b82f6' : '#e2e8f0'};
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    `;
+
+    itemCard.innerHTML = `
+      <div style="overflow: hidden; padding-right: 8px; flex-grow: 1;">
+        <div style="font-size: 0.85rem; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${obj.userData.label || 'Equipment Item'}</div>
+        <div style="font-size: 0.75rem; font-family: monospace; color: #2563eb;">SKU: ${obj.userData.sku || 'N/A'}</div>
+      </div>
+      <button title="Delete Item" class="delete-placed-btn" style="background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 14px; padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: 4px;">🗑️</button>
+    `;
+
+    itemCard.addEventListener('click', (e) => {
+      if (e.target.closest('.delete-placed-btn')) {
+        e.stopPropagation();
+        removeObjectByIndex(index);
+        return;
+      }
+      selectedMesh = obj;
+      updateHaloGeometry(selectedMesh);
+      updatePlacedItemsUI();
+    });
+
+    placedItemsContainer.appendChild(itemCard);
+  });
+}
+
+function removeObjectByIndex(index) {
+  const targetObj = spawnedObjects[index];
+  if (!targetObj) return;
+
+  scene.remove(targetObj);
+  spawnedObjects.splice(index, 1);
+
+  if (selectedMesh === targetObj) {
+    selectedMesh = null;
+    if (haloMesh) haloMesh.visible = false;
+    if (actionOverlay) actionOverlay.style.display = 'none';
+  }
+  updatePlacedItemsUI();
+}
 
 function createActionOverlayUI() {
   actionOverlay = document.createElement('div');
@@ -123,13 +220,10 @@ function performRotation(mesh) {
 
 function removeSelectedItem() {
   if (!selectedMesh) return;
-  scene.remove(selectedMesh);
   const index = spawnedObjects.indexOf(selectedMesh);
-  if (index > -1) spawnedObjects.splice(index, 1);
-  selectedMesh = null;
-  if (haloMesh) haloMesh.visible = false;
-  if (actionOverlay) actionOverlay.style.display = 'none';
-  if (controls) controls.enabled = true;
+  if (index > -1) {
+    removeObjectByIndex(index);
+  }
 }
 
 function cycleWallAttachment(mesh) {
@@ -231,13 +325,14 @@ function setupInteractionEvents(container) {
       selectedMesh = spawnedObjects.includes(obj) ? obj : hits[0].object;
       updateHaloGeometry(selectedMesh);
       isDragging = true;
-      controls.enabled = false; // Disable orbit controls only when dragging an item
+      controls.enabled = false; 
     } else {
       selectedMesh = null;
       if (haloMesh) haloMesh.visible = false;
       if (actionOverlay) actionOverlay.style.display = 'none';
       isDragging = false;
     }
+    updatePlacedItemsUI();
   });
 
   container.addEventListener('pointermove', (e) => {
@@ -390,7 +485,6 @@ function animate() {
   if (selectedMesh && haloMesh && haloMesh.visible && actionOverlay) {
     const tempV = new THREE.Vector3();
     selectedMesh.getWorldPosition(tempV);
-    // Lower projection offset so it stays closer to the item and inside the container viewport
     tempV.y += selectedMesh.userData.isWallItem ? 0.4 : 0.8;
     tempV.project(camera);
 
@@ -400,7 +494,6 @@ function animate() {
       const x = (tempV.x * .5 + .5) * rect.width;
       const y = (tempV.y * -.5 + .5) * rect.height;
 
-      // Keep overlay clamped inside canvas boundaries so it doesn't clip off screen
       const clampedX = Math.max(rect.left + 30, Math.min(rect.right - 80, rect.left + x - 40));
       const clampedY = Math.max(rect.top + 30, Math.min(rect.bottom - 40, rect.top + y - 20));
 
@@ -451,6 +544,9 @@ function load3DMenuCatalog() {
 function spawn3DObject(itemData) {
   if (!scene) return;
   const group = createSpawnerGeometry(itemData);
+  
+  group.userData.label = itemData.label;
+  group.userData.sku = itemData.sku;
 
   if (itemData.isWallItem) {
     group.userData.isWallItem = true;
@@ -463,4 +559,5 @@ function spawn3DObject(itemData) {
   spawnedObjects.push(group);
   selectedMesh = group;
   updateHaloGeometry(group);
+  updatePlacedItemsUI();
 }
